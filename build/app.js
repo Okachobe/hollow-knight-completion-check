@@ -232,6 +232,7 @@ function HKCheckCompletion(jsonObject) {
 
   (0,_page_functions_js__WEBPACK_IMPORTED_MODULE_1__.CheckboxHintsToggle)();
   (0,_page_functions_js__WEBPACK_IMPORTED_MODULE_1__.CheckboxSpoilersToggle)();
+  (0,_page_functions_js__WEBPACK_IMPORTED_MODULE_1__.CheckboxIncompleteToggle)();
   /* focus the text area after analyzing the save, without scrolling the document (too slow) */
 
   /* document.getElementById("save-area").focus({preventScroll: true}); */
@@ -2138,11 +2139,13 @@ function InitializeHTMLPopulation(db) {
   if ((0,_page_functions_js__WEBPACK_IMPORTED_MODULE_1__.StorageAvailable)('localStorage')) {
     if (localStorage.getItem("hkCheckboxHints") === "checked") document.getElementById("checkbox-hints").checked = true;
     if (localStorage.getItem("hkCheckboxSpoilers") === "checked") document.getElementById("checkbox-spoilers").checked = true;
+    if (localStorage.getItem("hkCheckboxIncomplete") === "checked") document.getElementById("checkbox-incomplete").checked = true;
   } // Prevents wrong checkbox behaviour (must run after everything is finished)
 
 
   (0,_page_functions_js__WEBPACK_IMPORTED_MODULE_1__.CheckboxHintsToggle)();
   (0,_page_functions_js__WEBPACK_IMPORTED_MODULE_1__.CheckboxSpoilersToggle)();
+  (0,_page_functions_js__WEBPACK_IMPORTED_MODULE_1__.CheckboxIncompleteToggle)();
 }
 /**
  * Reset the object state in memory to default values, like before first save analyzing. Undo all changes.
@@ -11677,6 +11680,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "AppendHTML": () => (/* binding */ AppendHTML),
 /* harmony export */   "CheckboxHintsToggle": () => (/* binding */ CheckboxHintsToggle),
 /* harmony export */   "CheckboxSpoilersToggle": () => (/* binding */ CheckboxSpoilersToggle),
+/* harmony export */   "CheckboxIncompleteToggle": () => (/* binding */ CheckboxIncompleteToggle),
 /* harmony export */   "StorageAvailable": () => (/* binding */ StorageAvailable),
 /* harmony export */   "Benchmark": () => (/* binding */ Benchmark),
 /* harmony export */   "benchmarkTimes": () => (/* binding */ benchmarkTimes)
@@ -11693,6 +11697,12 @@ __webpack_require__.r(__webpack_exports__);
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
 
 /* ------------------------ Load image files (necessary for Webpack) ---------------------------------------------------------- */
@@ -11864,50 +11874,50 @@ function GenerateInnerHTML(db) {
     switch (section) {
       /* Main % */
       case "bosses":
-        textFill += ["<div class=\"tab-switch-buttons\">", "<button id=\"button-switch-main\" name=\"main\" class=\"button tab-switch\" type=\"button\">Main %</button>", "<button id=\"button-switch-essentials\" name=\"essentials\" class=\"button tab-switch\" type=\"button\">Essentials %</button>", "<button id=\"button-switch-journal\" name=\"journal\" class=\"button tab-switch\" type=\"button\">Journal</button>", "<button id=\"button-switch-collectibles\" name=\"collectibles\" class=\"button tab-switch\" type=\"button\">Collectibles</button>", "<button id=\"button-switch-geocaches\" name=\"geocaches\" class=\"button tab-switch\" type=\"button\">Geo Caches</button>", "<button id=\"button-switch-secrets\" name=\"secrets\" class=\"button tab-switch\" type=\"button\">Secrets</button>", "<button id=\"button-switch-godhome\" name=\"godhome\" class=\"button tab-switch\" type=\"button\">Godmaster</button>", "<button id=\"button-switch-statistics\" name=\"statistics\" class=\"button tab-switch\" type=\"button\">Statistics</button>", "</div>"].join("\n");
-        textFill += "<div id=\"tab-main\" class=\"large-section\">";
+        textFill += ["<div class=\"tab-switch-buttons\">", "<button id=\"button-switch-all\" name=\"all\" class=\"button tab-switch\" type=\"button\">All</button>", "<button id=\"button-switch-main\" name=\"main\" class=\"button tab-switch\" type=\"button\">Main %</button>", "<button id=\"button-switch-essentials\" name=\"essentials\" class=\"button tab-switch\" type=\"button\">Essentials %</button>", "<button id=\"button-switch-journal\" name=\"journal\" class=\"button tab-switch\" type=\"button\">Journal</button>", "<button id=\"button-switch-collectibles\" name=\"collectibles\" class=\"button tab-switch\" type=\"button\">Collectibles</button>", "<button id=\"button-switch-geocaches\" name=\"geocaches\" class=\"button tab-switch\" type=\"button\">Geo Caches</button>", "<button id=\"button-switch-secrets\" name=\"secrets\" class=\"button tab-switch\" type=\"button\">Secrets</button>", "<button id=\"button-switch-godhome\" name=\"godhome\" class=\"button tab-switch\" type=\"button\">Godmaster</button>", "<button id=\"button-switch-statistics\" name=\"statistics\" class=\"button tab-switch\" type=\"button\">Statistics</button>", "</div>"].join("\n");
+        textFill += LargeSectionStart("tab-main", "Main", db);
         break;
 
       /* Essentials % */
 
       case "essentialsCollectibles":
-        textFill += "<div id=\"tab-essentials\" class=\"large-section\">";
+        textFill += LargeSectionStart("tab-essentials", "Essentials", db);
         break;
 
       /* Journal */
 
       case "huntersJournal":
-        textFill += "<div id=\"tab-journal\" class=\"large-section\">";
+        textFill += LargeSectionStart("tab-journal", "Journal", db);
         break;
 
       /* Collectibles */
 
       case "charmNotches":
-        textFill += "<div id=\"tab-collectibles\" class=\"large-section\">";
+        textFill += LargeSectionStart("tab-collectibles", "Collectibles", db);
         break;
 
       /* Geo Caches */
 
       case "geoChests":
-        textFill += "<div id=\"tab-geocaches\" class=\"large-section\">";
+        textFill += LargeSectionStart("tab-geocaches", "Geo Caches", db);
         break;
 
       /* Secrets */
 
       case "worldInteractions":
-        textFill += "<div id=\"tab-secrets\" class=\"large-section\">";
+        textFill += LargeSectionStart("tab-secrets", "Secrets", db);
         break;
 
       /* Statistics */
 
       case "statistics":
-        textFill += "<div id=\"tab-statistics\" class=\"large-section\">";
+        textFill += LargeSectionStart("tab-statistics", "Statistics", db);
         break;
 
       /* Godmaster */
 
       case "godhomeStatistics":
-        textFill += "<div id=\"tab-godhome\" class=\"large-section\">";
+        textFill += LargeSectionStart("tab-godhome", "Godmaster", db);
         break;
     }
 
@@ -12195,7 +12205,11 @@ function GenerateInnerHTML(db) {
                 obj.icon = SYMBOL_EMPTY;
             }
           } else {
-            obj.icon = SYMBOL_FALSE;
+            if (section === "statistics") {
+              obj.icon = SYMBOL_EMPTY;
+            } else {
+              obj.icon = SYMBOL_FALSE;
+            }
           }
           /* assign the appropriate spoiler class name depending on the completion check (for blurring names) */
 
@@ -12248,7 +12262,20 @@ function GenerateInnerHTML(db) {
             }
           }
 
-          if (obj.textPrefix.includes("<del>")) obj.textSuffix = "<del>".concat(obj.textSuffix, "</del>");
+          var isEntryCompleted = false;
+
+          if (entries[_entry].disabled === true) {
+            isEntryCompleted = true;
+          } else if (section === "statistics" && !entries[_entry].hasOwnProperty("max")) {
+            // Pure statistics should never be hidden
+            isEntryCompleted = false;
+          } else {
+            var iconName = entries[_entry].icon;
+            isEntryCompleted = iconName === "green" || iconName === "bindingNail" || iconName === "bindingShell" || iconName === "bindingCharms" || iconName === "bindingSoul" || iconName === "bindingAll" || iconName === "attuned" || iconName === "ascended" || iconName === "radiant" || iconName === "none";
+          }
+
+          var completedClass = isEntryCompleted ? " completed-item" : " incomplete-item";
+          obj.div = "<div class='single-entry".concat(completedClass, "'>");
           /* textFill += SingleEntryFill(section, entries[entry]); */
 
           textFill += SingleEntryFill(obj);
@@ -12324,8 +12351,114 @@ function SectionDescription(section) {
   return "<p class=\"section-description\">".concat(section.description, "</p>");
 }
 
+function IsSectionCompleted(section) {
+  if (section.id === "hk-intro" || section.id === "hk-hints" || section.id === "hk-statistics") {
+    return false;
+  }
+
+  var entries = section.entries;
+
+  for (var entry in entries) {
+    if (entries[entry].disabled === true) {
+      continue;
+    }
+
+    var iconName = entries[entry].icon;
+    var isCompleted = iconName === "green" || iconName === "bindingNail" || iconName === "bindingShell" || iconName === "bindingCharms" || iconName === "bindingSoul" || iconName === "bindingAll" || iconName === "attuned" || iconName === "ascended" || iconName === "radiant" || iconName === "none";
+
+    if (!isCompleted) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function SectionStart(section) {
-  return "<div id=\"".concat(section.id, "\">\n");
+  var extraClass = IsSectionCompleted(section) ? "completed-section" : "";
+  var classes = ["section-container"];
+  if (extraClass) classes.push(extraClass);
+
+  if (StorageAvailable('localStorage')) {
+    if (localStorage.getItem("collapsed-".concat(section.id)) === "true") {
+      classes.push("collapsed");
+    }
+  }
+
+  var cl = " class=\"".concat(classes.join(" "), "\"");
+  return "<div id=\"".concat(section.id, "\"").concat(cl, ">\n");
+}
+
+var TAB_SECTIONS = {
+  "tab-main": ["bosses", "charms", "equipment", "nailUpgrades", "nailArts", "spells", "maskShards", "vesselFragments", "dreamNail", "warriorDreams", "dreamers", "colosseum", "grimmTroupe", "lifeblood", "godmaster"],
+  "tab-essentials": ["essentialsCollectibles", "essentialsStagStations", "essentialsWorldInteractions", "essentialsBosses", "achievementsCollectibles", "achievementsMaps", "achievementsWorldInteractions", "achievementsBosses"],
+  "tab-journal": ["huntersJournal", "huntersJournalOptional"],
+  "tab-collectibles": ["charmNotches", "grubs", "whisperingRoots", "relicsWanderersJournal", "relicsHallownestSeal", "relicsKingsIdol", "relicsArcaneEgg", "rancidEggs", "items"],
+  "tab-geocaches": ["geoChests", "geoRocks"],
+  "tab-secrets": ["worldInteractions", "secretRooms", "corniferNotes"],
+  "tab-statistics": ["statistics"],
+  "tab-godhome": ["godhomeStatistics", "pantheonOfTheMaster", "pantheonOfTheArtist", "pantheonOfTheSage", "pantheonOfTheKnight", "pantheonOfHallownest", "hallOfGods"]
+};
+
+function GetTabCompletionPercent(tabId, db) {
+  if (!db.saveAnalyzed) {
+    return 0;
+  }
+
+  if (tabId === "tab-main") {
+    return db.sections.intro.percent;
+  }
+
+  var sections = TAB_SECTIONS[tabId];
+  if (!sections) return 0;
+  var completed = 0;
+  var total = 0;
+
+  var _iterator = _createForOfIteratorHelper(sections),
+      _step;
+
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var s = _step.value;
+      var section = db.sections[s];
+      if (!section) continue;
+      var entries = section.entries;
+
+      for (var entry in entries) {
+        if (entries[entry].disabled === true) {
+          continue;
+        }
+
+        total++;
+        var iconName = entries[entry].icon;
+        var isCompleted = iconName === "green" || iconName === "bindingNail" || iconName === "bindingShell" || iconName === "bindingCharms" || iconName === "bindingSoul" || iconName === "bindingAll" || iconName === "attuned" || iconName === "ascended" || iconName === "radiant" || iconName === "none";
+
+        if (isCompleted) {
+          completed++;
+        }
+      }
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+
+  if (total === 0) return 0;
+  return Math.round(completed / total * 100);
+}
+
+function LargeSectionStart(tabId, title, db) {
+  var classes = ["large-section"];
+
+  if (StorageAvailable('localStorage')) {
+    if (localStorage.getItem("collapsed-".concat(tabId)) === "true") {
+      classes.push("collapsed");
+    }
+  }
+
+  var pct = GetTabCompletionPercent(tabId, db);
+  return "<div id=\"".concat(tabId, "\" class=\"").concat(classes.join(" "), "\"><h1 class=\"tab-header\">").concat(title, " <div class=\"percent-box\" style=\"margin-left:1.5rem;\">").concat(pct, "%</div></h1>\n");
 }
 /**
  * Replaces the h2 titles with max percent values as read from the database
@@ -12347,21 +12480,6 @@ function CompletionFillNoSave(section) {
 
   switch (section.id) {
     case "hk-intro":
-    case "hk-bosses":
-    case "hk-charms":
-    case "hk-equipment":
-    case "hk-nailupgrades":
-    case "hk-nailarts":
-    case "hk-spells":
-    case "hk-maskshards":
-    case "hk-vesselfragments":
-    case "hk-dreamnail":
-    case "hk-warriordreams":
-    case "hk-dreamers":
-    case "hk-colosseum":
-    case "hk-grimmtroupe":
-    case "hk-lifeblood":
-    case "hk-godmaster":
       symbol = "%";
       break;
 
@@ -12369,7 +12487,7 @@ function CompletionFillNoSave(section) {
       symbol = "";
   }
 
-  percentBox = "<div class='percent-box'>".concat(id === "hk-intro" ? 0 : section.maxPercent).concat(symbol, "</div>");
+  percentBox = "<div class='percent-box'>".concat(id === "hk-intro" ? "0%" : "0/".concat(section.maxPercent).concat(symbol), "</div>");
   if (!section.hasOwnProperty("maxPercent")) percentBox = "";
   fullString += "<h2 id='".concat(h2id, "'>").concat(h2).concat(percentBox, "</h2>"); // ----------------- add True Completion h2 title ---------------- //
 
@@ -12456,24 +12574,6 @@ function CompletionFill(section) {
         trueCompletionCurrent = section.extendedCompletionDone;
         trueCompletionTotal = section.extendedCompletionTotal;
         trueCompletionPercent = trueCompletionCurrent / trueCompletionTotal * 100;
-        symbol = "%";
-        break;
-
-      case "hk-bosses":
-      case "hk-charms":
-      case "hk-equipment":
-      case "hk-nailupgrades":
-      case "hk-nailarts":
-      case "hk-spells":
-      case "hk-maskshards":
-      case "hk-vesselfragments":
-      case "hk-dreamnail":
-      case "hk-warriordreams":
-      case "hk-dreamers":
-      case "hk-colosseum":
-      case "hk-grimmtroupe":
-      case "hk-lifeblood":
-      case "hk-godmaster":
         symbol = "%";
         break;
 
@@ -12689,27 +12789,93 @@ function CheckboxSpoilersToggle() {
   }
 }
 /**
+ * Toggles display of completed items, leaving only incomplete ones.
+ * @param {string} param "hide", "show" or none (optional)
+ */
+
+
+function CheckboxIncompleteToggle() {
+  var param = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "none";
+  var checkboxId = document.getElementById("checkbox-incomplete");
+
+  switch (param) {
+    case "hide":
+      document.body.classList.remove("show-incomplete-only");
+      checkboxId.value = "incomplete-off";
+      checkboxId.checked = false; // remember this choice for subsequent page visits and browser restarts
+
+      if (StorageAvailable('localStorage')) {
+        localStorage.setItem("hkCheckboxIncomplete", "unchecked");
+      }
+
+      break;
+
+    case "show":
+      document.body.classList.add("show-incomplete-only");
+      checkboxId.value = "incomplete-on";
+      checkboxId.checked = true; // remember this choice for subsequent page visits and browser restarts
+
+      if (StorageAvailable('localStorage')) {
+        localStorage.setItem("hkCheckboxIncomplete", "checked");
+      }
+
+      break;
+
+    default:
+      // This runs when the checkbox is not checked
+      if (checkboxId.checked === false) {
+        document.body.classList.remove("show-incomplete-only");
+        checkboxId.value = "incomplete-off"; // remember this choice for subsequent page visits and browser restarts
+
+        if (StorageAvailable('localStorage')) {
+          localStorage.setItem("hkCheckboxIncomplete", "unchecked");
+        }
+      } // This runs when the checkbox is checked
+      else {
+        document.body.classList.add("show-incomplete-only");
+        checkboxId.value = "incomplete-on"; // remember this choice for subsequent page visits and browser restarts
+
+        if (StorageAvailable('localStorage')) {
+          localStorage.setItem("hkCheckboxIncomplete", "checked");
+        }
+      }
+
+  }
+}
+/**
  * Hides all other tabs, except the one which button was clicked (shows only the chosen tab)
  * @param {String} clickedButton The click target (button clicked)
  */
 
 
 function PageSwitchTab(clickedButton) {
+  if (clickedButton === "all") {
+    document.body.classList.add("show-all-tabs");
+  } else {
+    document.body.classList.remove("show-all-tabs");
+  }
+
   var sectionList = document.querySelectorAll(".large-section");
   var buttonList = document.querySelectorAll(".tab-switch");
   /* Make Active Tab Visible */
 
   for (var i = 0, length = sectionList.length; i < length; i++) {
-    /* Other tabs except the clicked one */
-    if (sectionList[i].id !== "tab-".concat(clickedButton)) {
-      if (!sectionList[i].classList.contains("hidden")) {
-        sectionList[i].classList.add("hidden");
-      }
-    }
-    /* The clicked tab */
-    else {
+    if (clickedButton === "all") {
       if (sectionList[i].classList.contains("hidden")) {
         sectionList[i].classList.remove("hidden");
+      }
+    } else {
+      /* Other tabs except the clicked one */
+      if (sectionList[i].id !== "tab-".concat(clickedButton)) {
+        if (!sectionList[i].classList.contains("hidden")) {
+          sectionList[i].classList.add("hidden");
+        }
+      }
+      /* The clicked tab */
+      else {
+        if (sectionList[i].classList.contains("hidden")) {
+          sectionList[i].classList.remove("hidden");
+        }
       }
     }
   }
@@ -12885,6 +13051,7 @@ document.getElementById("toggle-mode").addEventListener("click", ToggleSaveModeS
 
 document.getElementById("checkbox-hints").addEventListener("click", CheckboxHintsToggle, false);
 document.getElementById("checkbox-spoilers").addEventListener("click", CheckboxSpoilersToggle, false);
+document.getElementById("checkbox-incomplete").addEventListener("click", CheckboxIncompleteToggle, false);
 /* ------------ Drag & drop file to the window -------------- */
 
 window.addEventListener('dragover', function (event) {
@@ -12932,6 +13099,38 @@ document.getElementById("save-area-file").addEventListener("change", function (e
     label.innerHTML = "".concat(SYMBOL_FILE).concat(fileName, "<div class=\"code-little\">").concat(fileDate, "</div>");
   } else {
     label.innerHTML = labelInitialText;
+  }
+}); // Toggle collapse state on section header click
+
+document.addEventListener("click", function (event) {
+  var h2 = event.target.closest(".section-container h2");
+
+  if (h2) {
+    var section = h2.closest(".section-container");
+
+    if (section.id === "hk-intro" || section.id === "hk-hints") {
+      return;
+    }
+
+    section.classList.toggle("collapsed"); // Remember this collapse state in localStorage
+
+    if (StorageAvailable('localStorage')) {
+      var isCollapsed = section.classList.contains("collapsed");
+      localStorage.setItem("collapsed-".concat(section.id), isCollapsed);
+    }
+  }
+
+  var h1 = event.target.closest(".large-section h1.tab-header");
+
+  if (h1) {
+    var largeSection = h1.closest(".large-section");
+    largeSection.classList.toggle("collapsed"); // Remember this collapse state in localStorage
+
+    if (StorageAvailable('localStorage')) {
+      var _isCollapsed = largeSection.classList.contains("collapsed");
+
+      localStorage.setItem("collapsed-".concat(largeSection.id), _isCollapsed);
+    }
   }
 });
 /* -------- Clean the text area and file input from leftover save file if present (Firefox especially) -------- */
