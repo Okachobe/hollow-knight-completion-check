@@ -11,6 +11,7 @@ import {
   AppendHTML,
   CheckboxHintsToggle,
   CheckboxSpoilersToggle,
+  CheckboxIncompleteToggle,
   StorageAvailable,
   Benchmark,
   benchmarkTimes
@@ -341,6 +342,7 @@ function HKCheckCompletion(jsonObject, benchStart = performance.now()) {
   // Prevents wrong checkbox behaviour (must run after everything is finished)
   CheckboxHintsToggle();
   CheckboxSpoilersToggle();
+  CheckboxIncompleteToggle();
 
   /* focus the text area after analyzing the save, without scrolling the document (too slow) */
   /* document.getElementById("save-area").focus({preventScroll: true}); */
@@ -2407,11 +2409,13 @@ function InitializeHTMLPopulation(db) {
   if (StorageAvailable('localStorage')) {
     if (localStorage.getItem("hkCheckboxHints") === "checked") document.getElementById("checkbox-hints").checked = true;
     if (localStorage.getItem("hkCheckboxSpoilers") === "checked") document.getElementById("checkbox-spoilers").checked = true;
+    if (localStorage.getItem("hkCheckboxIncomplete") === "checked") document.getElementById("checkbox-incomplete").checked = true;
   }
 
   // Prevents wrong checkbox behaviour (must run after everything is finished)
   CheckboxHintsToggle();
   CheckboxSpoilersToggle();
+  CheckboxIncompleteToggle();
 }
 
 /**
