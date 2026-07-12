@@ -970,3 +970,101 @@ input[type="radio"]:focus:not(:focus-visible) + label {
 .test {
   color: #59d1da;
 }
+
+/* Incomplete Only Filter Styles */
+body.show-incomplete-only .completed-item,
+body.show-incomplete-only .completed-section {
+  display: none !important;
+}
+
+/* Collapsible Section Styles */
+.section-container h2 {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-left: 1.5rem; /* Make room for the arrow */
+}
+
+/* Unicode triangle character as expander arrow */
+.section-container h2::before {
+  content: "▼";
+  font-size: 0.75rem;
+  color: #3ca2e0;
+  display: inline-block;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: transform 0.2s ease;
+}
+
+/* Point right when collapsed */
+.section-container.collapsed h2::before {
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+/* Hide entries and descriptions when collapsed */
+.section-container.collapsed > .single-entry,
+.section-container.collapsed > .section-description {
+  display: none !important;
+}
+
+/* Exclude intro and hints sections from collapsing and arrow display */
+#hk-intro h2,
+#hk-hints h2 {
+  cursor: default !important;
+  padding-left: 0 !important;
+}
+
+#hk-intro h2::before,
+#hk-hints h2::before {
+  display: none !important;
+}
+
+/* Category Header Styling */
+.large-section h1.tab-header {
+  display: none; /* Hide by default */
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-left: 2rem; /* Make room for the arrow */
+  font-family: 'Cinzel', serif;
+  font-size: 2.2rem;
+  color: #fff;
+  border-bottom: 2px solid #3ca2e0;
+  padding-bottom: 0.5rem;
+  margin-top: 2rem;
+  margin-bottom: 1.5rem;
+
+  /* Flexbox alignment for right aligning the percent boxes */
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Category Expander arrow */
+.large-section h1.tab-header::before {
+  content: "▼";
+  font-size: 1.2rem;
+  color: #3ca2e0;
+  display: inline-block;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: transform 0.2s ease;
+}
+
+/* Show category headers only when viewing the 'All' tab */
+body.show-all-tabs .large-section h1.tab-header {
+  display: flex;
+}
+
+/* Point right when collapsed */
+body.show-all-tabs .large-section.collapsed h1.tab-header::before {
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+/* Hide subsections when collapsed, only in 'All' tab view */
+body.show-all-tabs .large-section.collapsed > .section-container {
+  display: none !important;
+}
