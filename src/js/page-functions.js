@@ -17,6 +17,9 @@ import {
   navBadge
 } from "./ledger-components.js";
 
+import { bindMapInteractions, ensureLeaflet } from "./screens/map.js";
+import { ensureDefault } from "./map-state.js";
+
 /* -------------------------- Constants --------------------------------------------------------------------------- */
 
 const ROOT = document.documentElement;
@@ -201,6 +204,16 @@ function ShowScreen(id) {
 
   SetActiveNav(id);
 
+  /* Leaflet computes 0x0 in a display:none container; when the Map screen is
+     revealed, (re)size + refresh it now that it has real dimensions. */
+  if (id === "map") {
+    if (typeof window !== "undefined" && window.requestAnimationFrame) {
+      window.requestAnimationFrame(ensureLeaflet);
+    } else {
+      ensureLeaflet();
+    }
+  }
+
   if (StorageAvailable("localStorage")) {
     localStorage.setItem("hkLedgerScreen", id);
   }
@@ -241,6 +254,9 @@ function GenerateInnerHTML(db) {
 
   benchmarkTimes.GenerateInnerHTML.timeStart = performance.now();
 
+  /* Seed the map's first-visit default selection before any screen renders */
+  ensureDefault(db);
+
   if (!chromeBuilt) BuildChrome();
 
   let target = document.getElementById("generated");
@@ -257,6 +273,18 @@ function GenerateInnerHTML(db) {
       if (card) ShowScreen(card.getAttribute("data-screen-link"));
     });
     target.dataset.navBound = "1";
+  }
+
+  /* Bind the delegated map controls + [data-map-pin] toggles (idempotent) */
+  bindMapInteractions();
+
+  /* (Re)mount the Leaflet map after each render — the innerHTML replace above
+     recreates #hk-leaflet-map, so this re-attaches it (no-op if hidden or
+     already mounted). Deferred so layout/visibility settle first. */
+  if (typeof window !== "undefined" && window.requestAnimationFrame) {
+    window.requestAnimationFrame(ensureLeaflet);
+  } else {
+    setTimeout(ensureLeaflet, 0);
   }
 
   /* Restore the last viewed screen (default: dashboard) */

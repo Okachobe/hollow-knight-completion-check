@@ -110,7 +110,7 @@ module.exports = {
                 }
             },
             {
-                test: /\.(svg|jpg|png|ttf|eot|woff|woff2)$/,
+                test: /\.(svg|jpg|png|webp|ttf|eot|woff|woff2)$/,
                 type: 'asset',
             },
         ],

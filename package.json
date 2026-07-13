@@ -33,7 +33,9 @@
   },
   "homepage": "https://github.com/ReznoRMichael/hollow-knight-completion-check#readme",
   "dependencies": {
-    "core-js": "^3.18.3"
+    "core-js": "^3.18.3",
+    "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3"
   },
   "devDependencies": {
     "@babel/core": "^7.15.8",
@@ -49,6 +51,7 @@
     "mini-css-extract-plugin": "^2.4.3",
     "postcss": "^8.5.18",
     "postcss-loader": "^7.3.4",
+    "puppeteer-core": "^25.3.0",
     "regenerator-runtime": "^0.13.9",
     "style-loader": "^3.3.1",
     "tailwindcss": "^3.4.19",

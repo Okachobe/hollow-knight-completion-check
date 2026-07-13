@@ -24,6 +24,11 @@
 
 import * as C from "./ledger-components.js";
 
+/* Cartographer's Atlas: pin selection state + the entry -> region resolver. Used
+   to render inline "pin to map" toggles on the mappable ledger rows/tiles. */
+import { idFor, isSelected, pinButton } from "./map-state.js";
+import { regionForEntry } from "./map-data.js";
+
 /* Bespoke per-screen renderers (Phase 2). Each screens/<id>.js exports render(db). */
 import { render as renderSpells } from "./screens/spells.js";
 import { render as renderAbilities } from "./screens/abilities.js";
@@ -41,9 +46,27 @@ import { render as renderCollectibles } from "./screens/collectibles.js";
 import { render as renderContent } from "./screens/content.js";
 import { render as renderEssentials } from "./screens/essentials.js";
 import { render as renderStatistics } from "./screens/statistics.js";
+import { render as renderMap } from "./screens/map.js";
+
+/* Boss portrait art — bundled locally (was hotlinked from Fandom's CDN). Sourced
+   from the Hollow Knight Wiki (© Team Cherry); see the in-app Credits/About. */
+import bossImgGruzMother from "../img/bosses/gruz-mother.webp";
+import bossImgFalseKnight from "../img/bosses/false-knight.webp";
+import bossImgHornet from "../img/bosses/hornet.webp";
+import bossImgDungDefender from "../img/bosses/dung-defender.webp";
+import bossImgBroodingMawlek from "../img/bosses/brooding-mawlek.webp";
+import bossImgSoulMaster from "../img/bosses/soul-master.webp";
+import bossImgMantisLords from "../img/bosses/mantis-lords.webp";
+import bossImgNosk from "../img/bosses/nosk.webp";
+import bossImgBrokenVessel from "../img/bosses/broken-vessel.webp";
+import bossImgCollector from "../img/bosses/collector.webp";
+import bossImgUumuu from "../img/bosses/uumuu.webp";
+import bossImgTraitorLord from "../img/bosses/traitor-lord.webp";
+import bossImgWatcherKnights from "../img/bosses/watcher-knights.webp";
 
 /* screen id -> bespoke renderer; overrides the generic renderer in renderAllScreens */
 const BESPOKE = {
+  map: renderMap,
   spells: renderSpells,
   abilities: renderAbilities,
   nailarts: renderNailarts,
@@ -138,32 +161,32 @@ export function countSections(db, keys) {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Hotlink boss portrait art for the 14 main-% bosses, keyed by db.sections.bosses
- * entry key (the same key renderBosses uses for the lookup). URLs are the
- * verified infobox images served by Fandom's CDN (static.wikia.nocookie.net),
- * resolved via the MediaWiki pageimages API against each boss's wiki page and
- * confirmed to return HTTP 200 image content. bossCard's <img onerror> still
- * falls back to the skull glyph if any image ever fails to load. Only passed to
- * bossCard when the boss is defeated.
+ * Boss portrait art for the 14 main-% bosses, keyed by db.sections.bosses entry
+ * key (the same key renderBosses uses for the lookup). Images are BUNDLED
+ * locally under src/img/bosses/ (previously hotlinked from Fandom's CDN) and are
+ * emitted by webpack as hashed assets; each import resolves to its final URL.
+ * bossCard's <img onerror> still falls back to the skull glyph if any image ever
+ * fails to load. Only passed to bossCard when the boss is defeated.
  *
- * Note: on the current wiki, Hornet Protector and Hornet Sentinel share a single
- * infobox image (B_Hornet2.png), so both map to the same URL.
+ * Source: Hollow Knight Wiki infobox art (© Team Cherry) — attributed in-app in
+ * the Credits/About section. Hornet Protector and Hornet Sentinel share a single
+ * infobox image, so both map to the same asset.
  */
 export const BOSS_IMG = {
-  bossGruzMother: "https://static.wikia.nocookie.net/hollowknight/images/9/9f/B_Gruz_Mother.png/revision/latest?cb=20170410171339",
-  falseKnightDefeated: "https://static.wikia.nocookie.net/hollowknight/images/9/98/B_False_Knight.png/revision/latest?cb=20181129012523",
-  hornet1Defeated: "https://static.wikia.nocookie.net/hollowknight/images/8/80/B_Hornet2.png/revision/latest?cb=20251028035041",
-  defeatedDungDefender: "https://static.wikia.nocookie.net/hollowknight/images/0/0e/B_Dung_Defender.png/revision/latest?cb=20180821144213",
-  bossBroodingMawlek: "https://static.wikia.nocookie.net/hollowknight/images/4/42/B_Brooding_Mawlek2.png/revision/latest?cb=20180821143716",
-  mageLordDefeated: "https://static.wikia.nocookie.net/hollowknight/images/c/cf/B_Soulmaster.png/revision/latest?cb=20180821144031",
-  defeatedMantisLords: "https://static.wikia.nocookie.net/hollowknight/images/2/2d/B_Mantis_Lords-2.png/revision/latest?cb=20180821145144",
-  killedMimicSpider: "https://static.wikia.nocookie.net/hollowknight/images/a/a8/B_Nosk.png/revision/latest?cb=20170412183621",
-  killedInfectedKnight: "https://static.wikia.nocookie.net/hollowknight/images/3/30/B_Broken_Vessel-2.png/revision/latest?cb=20180821144714",
-  collectorDefeated: "https://static.wikia.nocookie.net/hollowknight/images/d/d5/B_Collector.png/revision/latest?cb=20170412130603",
-  defeatedMegaJelly: "https://static.wikia.nocookie.net/hollowknight/images/4/49/B_Uumuu.png/revision/latest?cb=20170412092250",
-  hornetOutskirtsDefeated: "https://static.wikia.nocookie.net/hollowknight/images/8/80/B_Hornet2.png/revision/latest?cb=20251028035041",
-  killedTraitorLord: "https://static.wikia.nocookie.net/hollowknight/images/2/2c/B_Traitor_Lord.png/revision/latest?cb=20170412201256",
-  killedBlackKnight: "https://static.wikia.nocookie.net/hollowknight/images/9/9b/B_Watcher_Knight-2.png/revision/latest?cb=20180827012908",
+  bossGruzMother: bossImgGruzMother,
+  falseKnightDefeated: bossImgFalseKnight,
+  hornet1Defeated: bossImgHornet,
+  defeatedDungDefender: bossImgDungDefender,
+  bossBroodingMawlek: bossImgBroodingMawlek,
+  mageLordDefeated: bossImgSoulMaster,
+  defeatedMantisLords: bossImgMantisLords,
+  killedMimicSpider: bossImgNosk,
+  killedInfectedKnight: bossImgBrokenVessel,
+  collectorDefeated: bossImgCollector,
+  defeatedMegaJelly: bossImgUumuu,
+  hornetOutskirtsDefeated: bossImgHornet,
+  killedTraitorLord: bossImgTraitorLord,
+  killedBlackKnight: bossImgWatcherKnights,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -273,14 +296,22 @@ export function renderGenericScreen(screen, db) {
       if (isStats) {
         html += valueRow(entry);
       } else {
-        html += C.listRow({
+        const rowOpts = {
           name: entry.name != null ? String(entry.name) : ekey,
           meta: "",
           spoiler: entry.spoiler != null ? String(entry.spoiler) : "",
           wiki: entry.wiki || "",
           complete: isEntryComplete(entry),
           spoilerHtml: true,
-        });
+        };
+        // Mappable entries get an inline "pin to map" toggle (Statistics never do).
+        const region = regionForEntry(key, ekey, entry);
+        if (region) {
+          const mid = idFor(key, ekey);
+          rowOpts.mapId = mid;
+          rowOpts.selected = isSelected(mid);
+        }
+        html += C.listRow(rowOpts);
       }
     }
     html += `</div>`;
@@ -325,17 +356,6 @@ const BENTO_SCREENS = [
   "essentials",
 ];
 
-/** Interactive external map linked from the Dashboard (Cartographer's Map). */
-const CARTOGRAPHER_MAP =
-  `<a href="https://mapgenie.io/hollow-knight/maps/hallownest" target="_blank" rel="noopener" ` +
-  `class="block w-full rounded-xl overflow-hidden relative border-2 border-dashed border-secondary-container/40 hover:border-secondary-container/80 transition-colors duration-500 group bg-surface-container-low min-h-[120px] flex items-center justify-center mb-section-gap">` +
-  `<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>` +
-  `<div class="relative z-10 text-center p-lg">` +
-  `<span class="material-symbols-outlined text-secondary-container text-3xl mb-xs" style="font-variation-settings:'FILL' 1;">map</span>` +
-  `<h3 class="font-display-lg text-headline-md text-secondary group-hover:text-secondary-container transition-colors">Cartographer's Map</h3>` +
-  `<p class="font-body-base text-secondary/70 flex items-center justify-center gap-xs"><span class="material-symbols-outlined text-sm">open_in_new</span> Interactive Hallownest Map</p>` +
-  `</div></a>`;
-
 /**
  * Dashboard: hero (game % + True Completion) + a 2-col bento of category cards
  * + the current Elderbug hint (kept in #hk-hints so the Hints toggle works).
@@ -354,8 +374,6 @@ function renderDashboard(db) {
     trueTotal: intro.extendedCompletionTotal || 0,
     analyzed,
   });
-
-  html += CARTOGRAPHER_MAP;
 
   html += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-md mb-section-gap">`;
   for (const id of BENTO_SCREENS) {
@@ -410,13 +428,26 @@ function renderBosses(db) {
     if (!entry) continue;
     const defeated = entry.icon === "green";
     const img = defeated ? (BOSS_IMG[key] || "") : "";
-    html += C.bossCard({
+    const card = C.bossCard({
       name: entry.name != null ? String(entry.name) : key,
       desc: entry.spoiler != null ? String(entry.spoiler) : "",
       img,
       wiki: entry.wiki || "",
       defeated,
     });
+    // Mappable bosses get a "pin to map" toggle at the card's top-left (the skull
+    // badge already occupies top-right on defeated cards).
+    const region = regionForEntry("bosses", key, entry);
+    if (region) {
+      const mid = idFor("bosses", key);
+      html +=
+        `<div class="relative">` +
+          card +
+          `<div class="absolute top-2 left-2 z-20">${pinButton(mid, isSelected(mid))}</div>` +
+        `</div>`;
+    } else {
+      html += card;
+    }
   }
   html += `</div>`;
   return html;
@@ -459,10 +490,18 @@ function renderCharms(db) {
           C.sym("auto_awesome", 0, "text-outline text-2xl") +
         `</div>`;
     const cardClass = complete ? CHARM_TILE_ACTIVE : CHARM_TILE_DIM;
+    // Mappable charms get a "pin to map" toggle at the tile's right edge.
+    let pinHtml = "";
+    const region = regionForEntry("charms", key, entry);
+    if (region) {
+      const mid = idFor("charms", key);
+      pinHtml = `<div class="ml-auto shrink-0">${pinButton(mid, isSelected(mid))}</div>`;
+    }
     html +=
       `<div class="${cardClass}">` +
         tile +
         `<div class="flex-grow min-w-0"><h4 class="font-body-bold text-on-surface">${nameHtml} ${spoilerHtml}</h4></div>` +
+        pinHtml +
       `</div>`;
   }
   html += `</div>`;
@@ -484,13 +523,21 @@ function renderCharms(db) {
       if (!Object.prototype.hasOwnProperty.call(notches.entries, key)) continue;
       const entry = notches.entries[key];
       if (!entry) continue;
-      html += C.listRow({
+      const rowOpts = {
         name: entry.name != null ? String(entry.name) : key,
         spoiler: entry.spoiler != null ? String(entry.spoiler) : "",
         wiki: entry.wiki || "",
         complete: isEntryComplete(entry),
         spoilerHtml: true,
-      });
+      };
+      // Charm notches rarely resolve to a region; pin only when they do.
+      const region = regionForEntry("charmNotches", key, entry);
+      if (region) {
+        const mid = idFor("charmNotches", key);
+        rowOpts.mapId = mid;
+        rowOpts.selected = isSelected(mid);
+      }
+      html += C.listRow(rowOpts);
     }
     html += `</div>`;
   }
@@ -530,14 +577,27 @@ function renderGrubs(db) {
     idx++;
     const rescued = isEntryComplete(entry);
     const { nameHtml, spoilerHtml } = nameSpoiler(entry, rescued);
+    // Mappable grubs get a "pin to map" toggle beside the #N index (top-right).
+    let pinHtml = "";
+    const region = regionForEntry("grubs", key, entry);
+    if (region) {
+      const mid = idFor("grubs", key);
+      pinHtml = pinButton(mid, isSelected(mid));
+    }
     const glyphRow = rescued
       ? `<div class="flex items-center justify-between mb-sm">` +
           C.sym("bug_report", 1, "text-secondary-container text-2xl") +
-          `<span class="font-code-path text-secondary-container">#${idx}</span>` +
+          `<div class="flex items-center gap-xs shrink-0">` +
+            `<span class="font-code-path text-secondary-container">#${idx}</span>` +
+            pinHtml +
+          `</div>` +
         `</div>`
       : `<div class="flex items-center justify-between mb-sm">` +
           C.sym("bug_report", 0, "text-outline text-2xl") +
-          `<span class="font-code-path text-outline">#${idx}</span>` +
+          `<div class="flex items-center gap-xs shrink-0">` +
+            `<span class="font-code-path text-outline">#${idx}</span>` +
+            pinHtml +
+          `</div>` +
         `</div>`;
     const cardClass = rescued ? GRUB_CARD_RESCUED : GRUB_CARD_TRAPPED;
     html +=
@@ -562,6 +622,7 @@ function renderGrubs(db) {
  */
 export const SCREENS = [
   { id: "dashboard", label: "Dashboard", icon: "home", sections: [], render: renderDashboard },
+  { id: "map", label: "Map", icon: "map", sections: [], render: renderMap },
   { id: "charms", label: "Charms", icon: "auto_awesome", sections: ["charms", "charmNotches"], render: renderCharms },
   { id: "bosses", label: "Bosses", icon: "swords", sections: ["bosses"], render: renderBosses },
   { id: "grubs", label: "Grubs", icon: "bug_report", sections: ["grubs"], render: renderGrubs },

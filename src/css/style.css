@@ -1110,3 +1110,441 @@ body.show-all-tabs .large-section.collapsed h1.tab-header::before {
 body.show-all-tabs .large-section.collapsed > .section-container {
   display: none !important;
 }
+
+/* ========================================================================== */
+/* Cartographer's Atlas — Map screen (screens/map.js).                         */
+/* Leaflet real-map version. All map chrome owned here as raw CSS (style.css   */
+/* is NOT purged), using the Knight's Ledger dark tokens directly.             */
+/* ========================================================================== */
+
+/* --- Header summary + global controls ------------------------------------- */
+.hk-summary-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  color: #febb00;
+  background: #10223b;
+  border: 1px solid rgba(254, 187, 0, 0.3);
+  border-radius: 9999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.hk-summary-pin .material-symbols-outlined {
+  font-size: 15px;
+}
+
+.hk-map-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Heebo', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #aac7d4;
+  background: #10223b;
+  border: 1px solid #183c55;
+  border-radius: 0.25rem;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hk-map-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.hk-map-btn:hover {
+  color: #d9f3ff;
+  background: #222a37;
+  border-color: #5e8dac;
+}
+
+.hk-map-btn:focus-visible {
+  outline: 2px solid #5e8dac;
+  outline-offset: 2px;
+}
+
+/* --- Category chips (tri-state) ------------------------------------------- */
+.hk-cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Heebo', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 9999px;
+  padding: 5px 12px;
+  cursor: pointer;
+  border: 1px solid #183c55;
+  background: #141c28;
+  color: #8c9198;
+  transition: all 0.2s ease;
+}
+
+.hk-cat-chip .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.hk-cat-chip .hk-cat-count {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+}
+
+.hk-cat-chip:hover {
+  transform: translateY(-1px);
+}
+
+.hk-cat-chip.is-none {
+  opacity: 0.75;
+}
+
+.hk-cat-chip.is-none:hover {
+  opacity: 1;
+  color: #aac7d4;
+  border-color: #5e8dac;
+}
+
+.hk-cat-chip.is-some {
+  color: #dae3f4;
+  background: #18202d;
+  border-color: rgba(254, 187, 0, 0.4);
+}
+
+.hk-cat-chip.is-some .hk-cat-count,
+.hk-cat-chip.is-some .material-symbols-outlined {
+  color: #febb00;
+}
+
+.hk-cat-chip.is-all {
+  color: #0a1424;
+  background: #febb00;
+  border-color: #febb00;
+  box-shadow: 0 0 12px rgba(254, 187, 0, 0.3);
+}
+
+.hk-cat-chip.is-all .hk-cat-count,
+.hk-cat-chip.is-all .material-symbols-outlined {
+  color: #0a1424;
+}
+
+/* --- "Pin to map" toggle (shared with ledger rows; markup in map-state.js) - */
+.hk-map-pin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 9999px;
+  border: 1px solid #183c55;
+  background: #10223b;
+  color: #8c9198;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hk-map-pin .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.hk-map-pin:hover {
+  color: #febb00;
+  border-color: #febb00;
+  box-shadow: 0 0 10px rgba(254, 187, 0, 0.3);
+}
+
+.hk-map-pin.is-pinned,
+.hk-map-pin[aria-pressed="true"] {
+  background: #febb00;
+  border-color: #febb00;
+  color: #0a1424;
+  box-shadow: 0 0 10px rgba(254, 187, 0, 0.35);
+}
+
+.hk-map-pin.is-pinned:hover,
+.hk-map-pin[aria-pressed="true"]:hover {
+  background: #ffca2b;
+  color: #0a1424;
+}
+
+.hk-map-pin:focus-visible {
+  outline: 2px solid #5e8dac;
+  outline-offset: 2px;
+}
+
+/* --- Leaflet map surface -------------------------------------------------- */
+.hk-leaflet {
+  width: 100%;
+  height: 620px;
+  border: 1px solid #183c55;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #05070d;
+  /* Contain Leaflet's internal high z-indexes so they never sit above the
+     page's fixed chrome (cookie banner, Ko-fi button). */
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
+
+@media (max-width: 640px) {
+  .hk-leaflet {
+    height: 68vh;
+    min-height: 380px;
+  }
+}
+
+.hk-leaflet.leaflet-container {
+  background: #05070d;
+  font-family: 'Heebo', sans-serif;
+}
+
+/* Zoom control -> dark theme */
+.hk-leaflet .leaflet-bar a,
+.hk-leaflet .leaflet-bar a:focus {
+  background: #10223b;
+  color: #aac7d4;
+  border-bottom: 1px solid #183c55;
+}
+.hk-leaflet .leaflet-bar a:hover {
+  background: #222a37;
+  color: #d9f3ff;
+}
+.hk-leaflet .leaflet-bar {
+  border: 1px solid #183c55;
+}
+
+/* --- Teardrop pins -------------------------------------------------------- */
+.hk-pin-wrap {
+  background: none;
+  border: none;
+}
+
+.hk-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.65);
+}
+
+.hk-pin-miss {
+  background: #febb00;
+}
+
+.hk-pin-done {
+  background: #5fae4e;
+}
+
+/* Category glyph, counter-rotated upright inside the -45deg teardrop. Dark on
+   both the amber and green bodies for contrast. */
+.hk-pin-glyph {
+  transform: rotate(45deg);
+  font-size: 15px;
+  line-height: 1;
+  color: #0a1424;
+  font-variation-settings: 'FILL' 1, 'wght' 600;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.hk-pin-done .hk-pin-glyph {
+  color: #0a2412;
+}
+
+/* --- Crisp vector region labels (overlaid on the unlabeled painterly base) - */
+.hk-region-label-wrap {
+  background: none;
+  border: none;
+}
+.hk-region-label {
+  display: inline-block;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #eaf6ff;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.95), 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* --- Cluster bubbles ------------------------------------------------------ */
+.hk-cluster {
+  background: none;
+}
+
+.hk-cluster-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: rgba(16, 34, 59, 0.92);
+  border: 2px solid #febb00;
+  color: #febb00;
+  font-family: 'Courier Prime', monospace;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 0 14px rgba(254, 187, 0, 0.35);
+}
+
+/* --- Popups --------------------------------------------------------------- */
+/* Scoped under .hk-popup (our bindPopup className) so these beat Leaflet's own
+   single-class defaults on specificity regardless of stylesheet load order —
+   otherwise Leaflet's `background:white` wins the tie and the popup renders
+   light with unreadable light-grey text. */
+.hk-popup .leaflet-popup-content-wrapper {
+  background: #18202d;
+  color: #dae3f4;
+  border: 1px solid #183c55;
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.hk-popup .leaflet-popup-tip {
+  background: #18202d;
+  border: 1px solid #183c55;
+}
+
+.hk-popup .leaflet-popup-content {
+  margin: 10px 12px;
+  line-height: 1.35;
+  color: #dae3f4;
+}
+
+.hk-popup .leaflet-popup-close-button {
+  color: #8fb0c4;
+}
+.hk-popup .leaflet-popup-close-button:hover {
+  color: #d9f3ff;
+}
+
+.hk-pop-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.hk-pop-top .material-symbols-outlined {
+  font-size: 16px;
+  color: #febb00;
+}
+
+.hk-pop-cat {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #aac7d4;
+}
+
+.hk-pop-state {
+  margin-left: auto;
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 9999px;
+}
+
+.hk-pop-state.is-done {
+  color: #0a1424;
+  background: #5fae4e;
+}
+
+.hk-pop-state.is-miss {
+  color: #0a1424;
+  background: #febb00;
+}
+
+.hk-pop-name {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  color: #dae3f4;
+}
+
+.hk-pop-loc {
+  font-size: 12px;
+  color: #aac7d4;
+  margin-top: 2px;
+}
+
+.leaflet-container a.hk-pop-wiki {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #febb00;
+}
+
+/* --- Bigger default map + collapse + maximize ----------------------------- */
+/* Overrides the fixed 620px above so the map fills more of large screens. */
+.hk-leaflet {
+  height: 72vh;
+  min-height: 480px;
+}
+@media (max-width: 640px) {
+  .hk-leaflet {
+    height: 60vh;
+    min-height: 340px;
+  }
+}
+
+/* Collapse the category chips to give the map more room. */
+#hk-map-root.hk-cats-collapsed #hk-map-cats {
+  display: none;
+}
+
+/* Accent the Maximize button. */
+.hk-map-btn-accent {
+  border-color: rgba(254, 187, 0, 0.5);
+  color: #febb00;
+}
+.hk-map-btn-accent .material-symbols-outlined {
+  color: #febb00;
+}
+
+/* Maximize: pin the whole map screen to the content area (right of the 240px
+   sidebar), below the cookie banner (z 1110) and the Ko-fi widget. */
+#hk-map-root.hk-map-max {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 240px; /* = sidebar-width */
+  z-index: 1000;
+  background: #0a1424;
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#hk-map-root.hk-map-max .hk-map-head-text {
+  display: none; /* reclaim vertical space when full-screen */
+}
+#hk-map-root.hk-map-max #hk-map-ui {
+  flex: 0 0 auto;
+}
+#hk-map-root.hk-map-max .hk-leaflet {
+  flex: 1 1 auto;
+  height: auto !important;
+  min-height: 0;
+  margin-top: 4px;
+}
+@media (max-width: 767px) {
+  #hk-map-root.hk-map-max {
+    left: 0;
+    padding: 8px;
+  }
+}
+

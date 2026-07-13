@@ -16,7 +16,13 @@
  *  - Custom classes (.relic-border/.card-glow/.badge-glow/.progress-bar-glow/
  *    .text-gradient-pale-ore/.fleur-divider/.relic-glow/.pulse-ambient and the
  *    spoiler/.wiki contract) live in src/css/tailwind.css and are never purged.
+ *
+ * The one app-module import: pinButton (the "pin to map" toggle) from map-state.js.
+ * map-state.js imports only map-data.js + ledger-util.js — it does NOT import this
+ * module — so there is no circular dependency.
  */
+
+import { pinButton } from "./map-state.js";
 
 export const WIKI = "https://hollowknight.fandom.com/wiki/";
 
@@ -214,7 +220,8 @@ export function statusBadge(label, kind = "complete") {
  * .spoiler-span-green/.spoiler-text/.spoiler-red/.blurred/.wiki classes that
  * the existing toggle logic (page-functions.js) requires verbatim.
  * @param {{icon?:string, img?:string, name:string, meta?:string, statusLabel?:string,
- *          complete?:boolean, spoiler?:string, wiki?:string, spoilerHtml?:boolean}} opts
+ *          complete?:boolean, spoiler?:string, wiki?:string, spoilerHtml?:boolean,
+ *          mapId?:string, selected?:boolean}} opts
  * @returns {string}
  */
 export function listRow({
@@ -227,6 +234,8 @@ export function listRow({
   spoiler = "",
   wiki = "",
   spoilerHtml = true,
+  mapId = "",
+  selected = false,
 }) {
   const rowClass = complete
     ? "single-entry completed-item bg-surface-container/85 backdrop-blur-md border border-border-dim border-t-2 border-t-success-green/30 rounded-lg p-sm flex items-center gap-md hover:bg-surface-container-high transition-colors"
@@ -271,6 +280,15 @@ export function listRow({
     ? `<div class="ml-auto shrink-0">${statusBadge(statusLabel, complete ? "complete" : "locked")}</div>`
     : "";
 
+  // Optional "pin to map" toggle at the row's right edge. When a status badge is
+  // present it already carries ml-auto (pushing the right cluster over), so the
+  // pin only needs ml-auto when it is the lone right-edge element.
+  let pinHtml = "";
+  if (mapId) {
+    const pinWrapClass = statusLabel ? "shrink-0" : "ml-auto shrink-0";
+    pinHtml = `<div class="${pinWrapClass}">${pinButton(mapId, selected)}</div>`;
+  }
+
   return (
     `<div class="${rowClass}">` +
       thumb +
@@ -279,6 +297,7 @@ export function listRow({
         metaHtml +
       `</div>` +
       statusHtml +
+      pinHtml +
     `</div>`
   );
 }
