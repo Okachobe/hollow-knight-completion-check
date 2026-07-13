@@ -96,6 +96,37 @@ summary::-webkit-details-marker {
   display: none;
 }
 
+/* The Ko-fi floating chat button ships hard-coded to the bottom-LEFT
+   (position:fixed; bottom:50px; left:10px), which lands right on top of the sidebar's
+   Load button. Flip it (and its popup) to the bottom-right. On mobile, lift it above the
+   bottom nav. */
+.floatingchat-container-wrap,
+.floatingchat-container-wrap-mobi,
+.kofi-popup-iframe-container,
+.kofi-popup-iframe-container-mobi {
+  left: auto !important;
+  right: 16px !important;
+}
+@media (max-width: 767px) {
+  .floatingchat-container-wrap,
+  .floatingchat-container-wrap-mobi {
+    right: 12px !important;
+    bottom: 84px !important;
+  }
+}
+/* While the cookie banner (#CookieAlert) is still showing, lift the button above it so
+   the notice stays readable. Once the user dismisses the banner it drops back down. */
+body:has(#CookieAlert) .floatingchat-container-wrap,
+body:has(#CookieAlert) .floatingchat-container-wrap-mobi {
+  bottom: 72px !important;
+}
+@media (max-width: 767px) {
+  body:has(#CookieAlert) .floatingchat-container-wrap,
+  body:has(#CookieAlert) .floatingchat-container-wrap-mobi {
+    bottom: 156px !important;
+  }
+}
+
 /* Active state for filter chips (toggled by JS so it works for the sidebar AND the
    mobile chips, which point at the same checkbox but aren't peer siblings). */
 .filter-chip.is-active {
