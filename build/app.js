@@ -16720,10 +16720,22 @@ function onMapClick(e) {
     var inCat = (0,_map_state_js__WEBPACK_IMPORTED_MODULE_6__.collectMarkers)(_hk_database_js__WEBPACK_IMPORTED_MODULE_5__["default"]).filter(function (m) {
       return m.category === catId;
     });
-    var allSelected = inCat.length > 0 && inCat.every(function (m) {
-      return (0,_map_state_js__WEBPACK_IMPORTED_MODULE_6__.isSelected)(m.id);
-    });
-    (0,_map_state_js__WEBPACK_IMPORTED_MODULE_6__.bulk)(_hk_database_js__WEBPACK_IMPORTED_MODULE_5__["default"], allSelected ? "none" : "all", catId);
+    var total = inCat.length;
+    var sel = inCat.reduce(function (n, m) {
+      return n + ((0,_map_state_js__WEBPACK_IMPORTED_MODULE_6__.isSelected)(m.id) ? 1 : 0);
+    }, 0);
+    var hasComplete = inCat.some(function (m) {
+      return m.complete;
+    }); // Tri-state cycle mirroring the chip's is-none / is-all / is-some display:
+    //   none (is-none) -> all (is-all) -> incomplete-only (is-some) -> none.
+    // Clicking a partial chip now clears it instead of selecting everything.
+    // When a category has no complete items, "incomplete" == "all", so the
+    // all stage clears directly rather than sticking on a no-op.
+
+    var _action;
+
+    if (sel === 0) _action = "all";else if (sel === total) _action = hasComplete ? "incomplete" : "none";else _action = "none";
+    (0,_map_state_js__WEBPACK_IMPORTED_MODULE_6__.bulk)(_hk_database_js__WEBPACK_IMPORTED_MODULE_5__["default"], _action, catId);
     refreshMap();
     return;
   }

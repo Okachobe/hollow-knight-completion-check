@@ -473,8 +473,19 @@ function onMapClick(e) {
   if (cat) {
     const catId = cat.getAttribute("data-map-cat");
     const inCat = collectMarkers(HK).filter((m) => m.category === catId);
-    const allSelected = inCat.length > 0 && inCat.every((m) => isSelected(m.id));
-    bulk(HK, allSelected ? "none" : "all", catId);
+    const total = inCat.length;
+    const sel = inCat.reduce((n, m) => n + (isSelected(m.id) ? 1 : 0), 0);
+    const hasComplete = inCat.some((m) => m.complete);
+    // Tri-state cycle mirroring the chip's is-none / is-all / is-some display:
+    //   none (is-none) -> all (is-all) -> incomplete-only (is-some) -> none.
+    // Clicking a partial chip now clears it instead of selecting everything.
+    // When a category has no complete items, "incomplete" == "all", so the
+    // all stage clears directly rather than sticking on a no-op.
+    let action;
+    if (sel === 0) action = "all";
+    else if (sel === total) action = hasComplete ? "incomplete" : "none";
+    else action = "none";
+    bulk(HK, action, catId);
     refreshMap();
     return;
   }
