@@ -1449,10 +1449,6 @@ video {
   --tw-text-opacity: 1;
   color: rgb(94 141 172 / var(--tw-text-opacity, 1));
 }
-.text-border-dim {
-  --tw-text-opacity: 1;
-  color: rgb(24 60 85 / var(--tw-text-opacity, 1));
-}
 .text-danger-scarlet {
   --tw-text-opacity: 1;
   color: rgb(240 58 23 / var(--tw-text-opacity, 1));
