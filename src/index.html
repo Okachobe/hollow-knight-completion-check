@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 
 <head>
   <meta charset="UTF-8">
@@ -9,7 +9,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Heebo:wght@300;400;500;700&family=Courier+Prime&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1"
+    rel="stylesheet">
 
   <title>Save Completion Analyzer for Hollow Knight Online</title>
 
@@ -40,137 +44,159 @@
   <meta name="author" content="ReznoR Michael">
 </head>
 
-<body>
+<body class="font-body-base bg-surface text-on-background min-h-screen">
 
+  <!-- Scroll-to-top control (queried by the engine on module load — keep) -->
   <button class="scroll-up-button hidden">
     <div class="scroll-up-button-arrow"></div>
   </button>
 
+  <!-- Ambient cavern background layer (CSS restyles into fixed z-[-1] layer) -->
   <div id="background"></div>
 
-  <div id="content">
+  <!-- ============================ DESKTOP SIDEBAR (global chrome, identical on every screen) ============================ -->
+  <nav
+    class="fixed left-0 top-0 h-full w-sidebar-width border-r border-border-dim bg-surface/85 backdrop-blur-xl flex flex-col pt-sm pb-lg z-40 hidden md:flex custom-scrollbar">
 
-    <h1 id="h1-title">Save Completion Analyzer</h1>
-    <div id="sub-title">for Hollow Knight</div>
-
-    <p class="smalltext">
-      <a class="link-social" href="https://steamcommunity.com/sharedfiles/filedetails/?id=2209910193" target="_blank"><i
-          class="simpleicon-steam"></i>Official Steam Guide</a>
-      <a class="link-social" href="https://github.com/Okachobe/hollow-knight-completion-check" target="_blank"><i
-          class="simpleicon-github"></i>GitHub</a>
-      <a class="link-social" href="https://ko-fi.com/okachobe" target="_blank">☕ Support on Ko-fi</a>
-      <br>
-      <!-- <a href="https://pastebin.com/raw/shfZ4Vqs" target="_blank">[ Decoded 5% Save Example ]</a><br> -->
-
-      <div class="tooltip">
-        <input type="text" id="save-location-input" value="%USERPROFILE%\AppData\LocalLow\Team Cherry\Hollow Knight\"
-          readonly>
-        <!-- <textarea id="save-location-input" value="%USERPROFILE%\AppData\LocalLow\Team Cherry\Hollow Knight\" readonly></textarea> -->
-        <span class="tooltip-text" id="save-location-input-tooltip">Click once to copy to clipboard</span>
-      </div>
-
-      <p class="smalltext">
-        Choose a <strong>user*.dat</strong> save <em>or</em> paste text from <a href="https://bloodorca.github.io/hollow/" target="_blank">Save
-          Editor</a> | <a href="https://pastebin.com/raw/xp1Gi7nG" target="_blank">Testing Save</a>
-      </p>
-    </p>
-
-    <div>
-
-      <div class="buttons centered">
-
-        <div class="input-buttons">
-          <input id="toggle-mode" class="input-button" type="button" value="modeFile">
-          <label for="toggle-mode" id="toggle-mode-label" class="button button-square" title="Switch Mode: Text or File."><i class="icon-arrows-cw"></i></label>
-          <!-- <input id="save-area-file" class="" type="file" name="file" accept=".dat,.bak*" onchange="LoadSaveFile(this);" onclick="this.value = '';"> -->
-          <input id="save-area-file" class="input-file" type="file" name="file" accept=".dat,.bak*">
-          <label for="save-area-file" id="file-input-label" class="button button-large" title="Navigate to Hollow Knight's Save File Location and select a user*.dat File."><i class="icon-doc-text-inv"></i>Choose Save File...</label>
-          
-          <button id="save-area-read" class="button button-large hidden" type="button" title="Press this button after pasting your Save Text from the Save Editor into the text box below.">Analyze Save Text</button>
-
-          <a class="button button-square" href="https://store.steampowered.com/account/remotestorageapp/?appid=367520"
-            target="_blank" title="Download a Save File from your Steam Cloud Storage for Hollow Knight."><i class="icon-download-cloud"></i></a>
-        </div>
-
-        <!-- <div class="input-buttons">
-          <a class="button" href="https://store.steampowered.com/account/remotestorageapp/?appid=367520"
-            target="_blank">Steam Cloud Saves<i class="icon-download-cloud"></i></a>
-        </div> -->
-
-      </div>
-
-      <textarea id="save-area" name="save-area" class="hidden" rows="6" spellcheck="false"
-        placeholder="Paste your decoded save text from Save Editor here (Ctrl&nbsp;+&nbsp;V)"
-        autofocus></textarea>
-
-      <div class="buttons">
-
-        <!-- <div class="input-buttons"> -->
-          <!-- <button id="save-area-file" class="button" onclick="">Load Save</button> -->
-          <!-- <input id="save-area-file" class="" type="file" name="file" accept=".dat,.bak*" onchange="LoadSaveFile(this)"> -->
-          <!-- <button id="save-area-read" class="button" onclick="HKReadTextArea('save-area');">Analyze Text</button> -->
-          <!-- <button id="save-area-read" class="button" type="button">Analyze Text</button> -->
-        <!-- </div> -->
-
-        <div class="checkboxes">
-
-          <input type="checkbox" name="checkboxes" id="checkbox-hints" value="hints-off">
-          <label for="checkbox-hints" class="checkbox-label"
-            title="Check to see an optional clue for your first playthrough based on your save's progress.">
-            <!-- <input type="checkbox" name="checkboxes" id="checkbox-hints" value="hints-off" onclick="CheckboxHintsToggle();"> -->
-            <span class="checkmark"></span><strong>Hints</strong>
-          </label>
-
-          <input type="checkbox" name="checkboxes" id="checkbox-spoilers" value="spoilers-off">
-          <label for="checkbox-spoilers" class="checkbox-label"
-            title="Check to show everything. By default only completed things are fully revealed.">
-            <!-- <input type="checkbox" name="checkboxes" id="checkbox-spoilers" value="spoilers-off" onclick="CheckboxSpoilersToggle();"> -->
-            <span class="checkmark"></span><strong>Spoilers</strong>
-          </label>
-
-          <input type="checkbox" name="checkboxes" id="checkbox-incomplete" value="incomplete-off">
-          <label for="checkbox-incomplete" class="checkbox-label"
-            title="Check to hide already completed entries and only show what you have left to complete.">
-            <span class="checkmark"></span><strong>Incomplete Only</strong>
-          </label>
-          
-        </div>
-
-      </div>
-
+    <!-- Wordmark (crest icon removed to reclaim sidebar space) -->
+    <div class="px-lg mb-md text-center">
+      <a class="group cursor-pointer inline-block" href="#">
+        <h1
+          class="font-display-lg text-headline-md text-primary leading-tight group-hover:text-secondary-container transition-colors">
+          Knight's Ledger</h1>
+        <span class="sr-only">Save Completion Analyzer for Hollow Knight</span>
+      </a>
     </div>
 
+    <!-- Navigation links (populated by the render engine from the SCREENS registry) -->
+    <ul id="ledger-nav-list" class="flex-1 overflow-y-auto px-sm space-y-unit custom-scrollbar"></ul>
 
+    <!-- View filters + Load (pinned to the bottom) -->
+    <div class="px-sm mt-auto pt-md space-y-sm">
 
-    <div style="margin-bottom: 20px;"></div>
+      <!-- Filter (collapsible) -->
+      <details id="view-filters" class="group/view" open>
+        <summary
+          class="flex items-center gap-xs px-md py-xs cursor-pointer select-none font-caption text-caption text-outline uppercase tracking-[0.15em] hover:text-lichen-blue transition-colors">
+          <span
+            class="material-symbols-outlined text-sm transition-transform duration-200 group-open/view:rotate-90">chevron_right</span>
+          <span>Filter</span>
+        </summary>
+        <div class="space-y-unit pt-xs">
 
-    <!-- ========== Main Generated Content =========== -->
-    <div id="generated"></div>
+          <input type="checkbox" name="checkboxes" id="checkbox-spoilers" value="spoilers-off" class="sr-only">
+          <label for="checkbox-spoilers"
+            class="filter-chip flex items-center gap-md px-md py-sm rounded-lg text-lichen-blue hover:bg-surface-container-high hover:text-on-surface cursor-pointer transition-colors"
+            title="Show everything. By default only completed things are fully revealed.">
+            <span class="material-symbols-outlined text-lg">visibility</span>
+            <span class="font-body-bold flex-1">Spoilers</span>
+          </label>
 
-    <div style="margin-bottom: 20px;"></div>
+          <input type="checkbox" name="checkboxes" id="checkbox-incomplete" value="incomplete-off" class="sr-only">
+          <label for="checkbox-incomplete"
+            class="filter-chip flex items-center gap-md px-md py-sm rounded-lg text-lichen-blue hover:bg-surface-container-high hover:text-on-surface cursor-pointer transition-colors"
+            title="Hide already completed entries and only show what you have left to complete.">
+            <span class="material-symbols-outlined text-lg">filter_alt</span>
+            <span class="font-body-bold flex-1">Incomplete Only</span>
+          </label>
+        </div>
+      </details>
 
-    <h6>Secrets!</h6>
+      <!-- Load Save: the label IS the button and MUST stay adjacent to its hidden input -->
+      <div class="px-md pt-xs">
+        <input id="save-area-file" class="hidden" type="file" name="file" accept=".dat,.bak*">
+        <label for="save-area-file" id="file-input-label"
+          class="w-full bg-surface-container-high text-lichen-blue font-body-bold py-sm rounded-lg border border-border-dim hover:border-secondary-container/50 hover:text-secondary-container hover:bg-surface-container-highest transition-all duration-300 flex items-center justify-center gap-xs group cursor-pointer"
+          title="Open your Hollow Knight save file (user*.dat).">
+          <span class="material-symbols-outlined text-sm">folder_open</span>
+          <span>Load Save</span>
+        </label>
+      </div>
+    </div>
+  </nav>
 
-    <p class="smalltext">
-      Did you know? You can press <strong>Ctrl + Shift + I</strong> and choose the <strong>Console Tab</strong> to view some extra secret
-      data not currently shown in the tool. (after loading any save file)
-    </p>
+  <!-- ============================ MAIN CANVAS ============================ -->
+  <main class="md:pl-sidebar-width min-h-screen pb-24 flex justify-center">
+    <div class="w-full max-w-container-max px-md md:px-lg py-lg">
 
-    <div style="margin-bottom: 20px;"></div>
+      <!-- Mobile header (crest + title) -->
+      <div class="md:hidden flex items-center justify-center gap-md mb-lg">
+        <div
+          class="w-12 h-12 rounded-full bg-surface-container-high border-2 border-border-dim flex items-center justify-center overflow-hidden relative border-double border-secondary-container/30">
+          <span class="material-symbols-outlined text-secondary-container text-2xl"
+            style="font-variation-settings:'FILL' 1;">hive</span>
+        </div>
+        <h1 class="font-headline-md-mobile text-headline-md-mobile text-primary leading-tight">Knight's Ledger</h1>
+      </div>
 
-    <p class="smalltext">
-      v2.3.0. Ideas &amp; Bug Reports: <a
-        href="https://github.com/Okachobe/hollow-knight-completion-check/issues" target="_blank"><i
-          class="simpleicon-github"></i>GitHub Issues</a> | <a
-        href="https://steamcommunity.com/sharedfiles/filedetails/?id=2209910193" target="_blank"><i
-          class="simpleicon-steam"></i>Steam Guide</a>.<br>
-      Originally created by 🉑 <a href="https://github.com/ReznoRMichael/hollow-knight-completion-check"
-        target="_blank">rezno[R]</a> (1990–2025). Maintained by <a href="https://github.com/Okachobe/hollow-knight-completion-check" target="_blank">Okachobe</a>.<br>
-      <a href="https://store.steampowered.com/app/367520/Hollow_Knight/" target="_blank">Hollow Knight</a> by <a
-        href="https://teamcherry.com.au/" target="_blank">Team Cherry</a> &copy; 2017–2026<br>
-    </p>
+      <!-- Mobile filter chips (labels drive the same hidden checkboxes as the sidebar) -->
+      <div class="md:hidden flex items-center justify-center gap-sm mb-lg flex-wrap">
+        <label for="checkbox-spoilers"
+          class="filter-chip flex items-center gap-xs px-md py-xs rounded-lg border border-border-dim bg-surface-container-high text-lichen-blue text-sm cursor-pointer transition-colors">
+          <span class="material-symbols-outlined text-base">visibility</span>
+          <span class="font-body-bold">Spoilers</span>
+        </label>
+        <label for="checkbox-incomplete"
+          class="filter-chip flex items-center gap-xs px-md py-xs rounded-lg border border-border-dim bg-surface-container-high text-lichen-blue text-sm cursor-pointer transition-colors">
+          <span class="material-symbols-outlined text-base">filter_alt</span>
+          <span class="font-body-bold">Incomplete</span>
+        </label>
+      </div>
 
-  </div> <!-- end content -->
+      <!-- ==================== RENDER TARGET (engine fills this) ==================== -->
+      <div id="generated"></div>
+
+      <!-- ==================== FOOTER ==================== -->
+      <footer class="mt-section-gap pt-lg border-t border-border-dim text-center font-caption text-caption text-outline space-y-xs">
+        <p>
+          Ideas &amp; Bug Reports:
+          <a class="text-primary hover:text-secondary-container transition-colors"
+            href="https://github.com/Okachobe/hollow-knight-completion-check/issues" target="_blank" rel="noopener">GitHub Issues</a>
+          <span class="text-border-dim">|</span>
+          <a class="text-primary hover:text-secondary-container transition-colors"
+            href="https://steamcommunity.com/sharedfiles/filedetails/?id=2209910193" target="_blank" rel="noopener">Steam Guide</a>
+        </p>
+        <p>
+          Originally created by
+          <a class="text-primary hover:text-secondary-container transition-colors"
+            href="https://github.com/ReznoRMichael/hollow-knight-completion-check" target="_blank" rel="noopener">rezno[R]</a>
+          (1990&ndash;2025). Maintained by
+          <a class="text-primary hover:text-secondary-container transition-colors"
+            href="https://github.com/Okachobe/hollow-knight-completion-check" target="_blank" rel="noopener">Okachobe</a>.
+        </p>
+        <p>
+          <a class="text-primary hover:text-secondary-container transition-colors"
+            href="https://store.steampowered.com/app/367520/Hollow_Knight/" target="_blank" rel="noopener">Hollow Knight</a>
+          by
+          <a class="text-primary hover:text-secondary-container transition-colors"
+            href="https://teamcherry.com.au/" target="_blank" rel="noopener">Team Cherry</a>
+          &copy; 2017&ndash;2026
+        </p>
+        <p class="font-code-path text-code-path text-border-bright">v2.3.0</p>
+      </footer>
+
+    </div>
+  </main>
+
+  <!-- ============================ MOBILE BOTTOM NAV (populated by the engine) ============================ -->
+  <nav id="ledger-bottom-nav"
+    class="fixed bottom-0 left-0 w-full z-50 flex overflow-x-auto justify-around items-center p-sm bg-surface/90 backdrop-blur-md border-t border-border-dim md:hidden custom-scrollbar"></nav>
+
+  <!-- ==================== Hidden load-helpers (kept in the DOM for the engine + tests; not shown for now) ==================== -->
+  <div id="advanced-load" class="hidden" aria-hidden="true">
+    <input id="toggle-mode" type="button" value="modeFile">
+    <label for="toggle-mode" id="toggle-mode-label" title="Switch Mode: Text or File."></label>
+    <textarea id="save-area" name="save-area" rows="6" spellcheck="false"
+      placeholder="Paste your decoded save text from Save Editor here"></textarea>
+    <button id="save-area-read" type="button">Analyze Save Text</button>
+    <a href="https://store.steampowered.com/account/remotestorageapp/?appid=367520" target="_blank"
+      rel="noopener">Steam Cloud</a>
+    <div class="tooltip">
+      <input type="text" id="save-location-input" value="%USERPROFILE%\AppData\LocalLow\Team Cherry\Hollow Knight\"
+        readonly>
+      <span class="tooltip-text" id="save-location-input-tooltip">Click once to copy to clipboard</span>
+    </div>
+  </div>
 
   <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
   <script>

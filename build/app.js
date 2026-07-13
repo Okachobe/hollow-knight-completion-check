@@ -11667,6 +11667,1304 @@ function GenerateDatabaseEntries(objectArray) {
 
 /***/ }),
 
+/***/ "./src/js/ledger-components.js":
+/*!*************************************!*\
+  !*** ./src/js/ledger-components.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "WIKI": () => (/* binding */ WIKI),
+/* harmony export */   "sym": () => (/* binding */ sym),
+/* harmony export */   "progressBar": () => (/* binding */ progressBar),
+/* harmony export */   "navBadge": () => (/* binding */ navBadge),
+/* harmony export */   "pill": () => (/* binding */ pill),
+/* harmony export */   "sectionHeader": () => (/* binding */ sectionHeader),
+/* harmony export */   "fleurDivider": () => (/* binding */ fleurDivider),
+/* harmony export */   "hero": () => (/* binding */ hero),
+/* harmony export */   "categoryCard": () => (/* binding */ categoryCard),
+/* harmony export */   "statusBadge": () => (/* binding */ statusBadge),
+/* harmony export */   "listRow": () => (/* binding */ listRow),
+/* harmony export */   "bossCard": () => (/* binding */ bossCard),
+/* harmony export */   "emptyState": () => (/* binding */ emptyState)
+/* harmony export */ });
+/**
+ * ledger-components.js — Knight's Ledger shared component library.
+ *
+ * PURE functions that return HTML strings. NO DOM access, NO side effects.
+ * The screen renderers (page-functions.js and per-screen authors) consume
+ * these to build the single `#generated.innerHTML` string.
+ *
+ * AUTHORING CONTRACT (see DESIGN-MAP §3 / tailwind.config.js):
+ *  - Every Tailwind class is a COMPLETE static string literal so the build-time
+ *    content scanner (globs ./src/**\/*.{html,js}) keeps it. Ternaries choose
+ *    between full class strings — never concatenate/interpolate class fragments.
+ *  - The ONLY runtime-computed values (progress width %, gauge rotation) are
+ *    emitted as inline `style="width:NN%"` — never as `w-[NN%]`.
+ *  - Icons are Material Symbols Outlined with an inline FILL variation setting.
+ *  - Dark theme only; tokens come from tailwind.config.js (no invented colors).
+ *  - Custom classes (.relic-border/.card-glow/.badge-glow/.progress-bar-glow/
+ *    .text-gradient-pale-ore/.fleur-divider/.relic-glow/.pulse-ambient and the
+ *    spoiler/.wiki contract) live in src/css/tailwind.css and are never purged.
+ */
+var WIKI = "https://hollowknight.fandom.com/wiki/";
+/**
+ * Material Symbols Outlined glyph.
+ * @param {string} name     ligature name (e.g. "swords")
+ * @param {0|1}    fill     FILL axis (1 = active/complete)
+ * @param {string} extraClass additional complete class-string literals
+ * @returns {string}
+ */
+
+function sym(name) {
+  var fill = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  var extraClass = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
+  var fillVal = fill ? 1 : 0;
+  var cls = extraClass ? "material-symbols-outlined ".concat(extraClass) : "material-symbols-outlined";
+  return "<span class=\"".concat(cls, "\" style=\"font-variation-settings:'FILL' ").concat(fillVal, ";\">").concat(name, "</span>");
+}
+/**
+ * Canonical progress bar. Track is fixed; fill width is an inline style.
+ * @param {number|null} pct     0-100 (clamped). Returns "" only when null.
+ * @param {"amber"|"teal"} variant fill color
+ * @returns {string}
+ */
+
+function progressBar(pct) {
+  var variant = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "amber";
+  if (pct === null) return "";
+  var n = Number(pct);
+  if (!Number.isFinite(n)) n = 0;
+  if (n < 0) n = 0;
+  if (n > 100) n = 100; // Full static class literals per variant (never interpolate the color token).
+
+  var fillClass = variant === "teal" ? "h-full bg-tertiary-container progress-bar-glow" : "h-full bg-secondary-container progress-bar-glow";
+  return "<div class=\"w-full h-2 bg-surface-container-high rounded-full overflow-hidden\">" + "<div class=\"".concat(fillClass, "\" style=\"width:").concat(n, "%\"></div>") + "</div>";
+}
+/**
+ * Sidebar count badge. Empty string when total is falsy (e.g. Statistics).
+ * @returns {string}
+ */
+
+function navBadge(done, total) {
+  if (!total) return "";
+  return "<span class=\"ml-auto font-code-path text-xs text-secondary-container badge-glow\">[".concat(done, "/").concat(total, "]</span>");
+}
+/**
+ * Card / section-header count pill. Single value when total is falsy.
+ * @returns {string}
+ */
+
+function pill(done, total) {
+  var label = total ? "[".concat(done, "/").concat(total, "]") : "".concat(done);
+  return "<span class=\"font-code-path text-secondary-container bg-surface-glow px-2 py-1 rounded border border-border-dim\">".concat(label, "</span>");
+}
+/**
+ * Standard section header: title (+ optional subtitle) left, count pill right.
+ * @param {{title:string, subtitle?:string, done?:number|null, total?:number|null}} opts
+ * @returns {string}
+ */
+
+function sectionHeader(_ref) {
+  var title = _ref.title,
+      _ref$subtitle = _ref.subtitle,
+      subtitle = _ref$subtitle === void 0 ? "" : _ref$subtitle,
+      _ref$done = _ref.done,
+      done = _ref$done === void 0 ? null : _ref$done,
+      _ref$total = _ref.total,
+      total = _ref$total === void 0 ? null : _ref$total;
+  var subtitleHtml = subtitle ? "<p class=\"font-label-sm text-lichen-blue\">".concat(subtitle, "</p>") : "";
+  var right = total != null ? pill(done, total) : "";
+  return "<div class=\"flex justify-between items-end mb-lg\">" + "<div><h2 class=\"font-headline-md text-headline-md text-on-surface relic-glow\">".concat(title, "</h2>").concat(subtitleHtml, "</div>") + "<div>".concat(right, "</div>") + "</div>";
+}
+/**
+ * Centered fleur divider (hive glyph flanked by rules). Optional heading after.
+ * @param {string} title
+ * @returns {string}
+ */
+
+function fleurDivider() {
+  var title = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+  var divider = "<div class=\"fleur-divider my-lg\">" + sym("hive", 1, "text-secondary-container pulse-ambient") + "</div>";
+  var heading = title ? "<h3 class=\"font-headline-md text-headline-md text-center text-primary-container mb-xl drop-shadow-md\">".concat(title, "</h3>") : "";
+  return divider + heading;
+}
+/**
+ * Dashboard overall-progress hero (rule C game-% + rule B true-completion).
+ * @param {{percent?:number, maxPercent?:number, trueDone?:number, trueTotal?:number, analyzed?:boolean}} opts
+ * @returns {string}
+ */
+
+function hero(_ref2) {
+  var _ref2$percent = _ref2.percent,
+      percent = _ref2$percent === void 0 ? 0 : _ref2$percent,
+      _ref2$maxPercent = _ref2.maxPercent,
+      maxPercent = _ref2$maxPercent === void 0 ? 112 : _ref2$maxPercent,
+      _ref2$trueDone = _ref2.trueDone,
+      trueDone = _ref2$trueDone === void 0 ? 0 : _ref2$trueDone,
+      _ref2$trueTotal = _ref2.trueTotal,
+      trueTotal = _ref2$trueTotal === void 0 ? 0 : _ref2$trueTotal,
+      _ref2$analyzed = _ref2.analyzed,
+      analyzed = _ref2$analyzed === void 0 ? false : _ref2$analyzed;
+  void analyzed;
+  var truePct = trueTotal ? (trueDone / trueTotal * 100).toFixed(2) : "0.00";
+  return "<section class=\"mb-section-gap\">" + "<div class=\"bg-surface/85 backdrop-blur-xl border-2 border-border-dim rounded-xl p-lg relative overflow-hidden group hover:border-secondary-container/50 transition-colors duration-500 relic-border\">" + "<div class=\"absolute inset-0 bg-surface-glow opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0\"></div>" + "<div class=\"relative z-10 flex flex-col md:flex-row items-center justify-between gap-lg\">" + "<div class=\"text-center md:text-left\">" + "<h3 class=\"font-headline-md text-headline-md text-primary mb-xs\">Total Completion</h3>" + "<p class=\"font-body-base text-lichen-blue\">Your journey through Hallownest.</p>" + "</div>" + "<div class=\"flex items-center gap-md\">" + "<div class=\"text-right\">" + "<span class=\"font-display-lg text-display-lg text-gradient-pale-ore block leading-none\">".concat(percent, "%</span>") + "<span class=\"font-caption text-caption text-outline\">".concat(maxPercent, "% Maximum</span>") + "</div>" + "<div class=\"w-16 h-16 rounded-full border-4 border-surface-container-high flex items-center justify-center relative\">" + "<div class=\"absolute inset-0 rounded-full border-4 border-secondary-container border-t-transparent border-r-transparent progress-bar-glow\" style=\"transform:rotate(-45deg)\"></div>" + sym("incomplete_circle", 1, "text-secondary-container") + "</div>" + "</div>" + "</div>" + "<div class=\"relative z-10 flex justify-between items-center mt-lg pt-md border-t border-border-dim\">" + "<span class=\"font-label-sm text-lichen-blue\">True Completion</span>" + "<span class=\"font-code-path text-secondary-container\">[".concat(trueDone, "/").concat(trueTotal, "] ").concat(truePct, "%</span>") + "</div>" + "</div>" + fleurDivider() + "</section>";
+}
+/**
+ * Bento category summary card (Dashboard). Whole card carries data-screen-link
+ * so the router makes it clickable.
+ * @param {{icon:string, label:string, screen:string, done?:number, total?:number, analyzed?:boolean}} opts
+ * @returns {string}
+ */
+
+function categoryCard(_ref3) {
+  var icon = _ref3.icon,
+      label = _ref3.label,
+      screen = _ref3.screen,
+      _ref3$done = _ref3.done,
+      done = _ref3$done === void 0 ? 0 : _ref3$done,
+      _ref3$total = _ref3.total,
+      total = _ref3$total === void 0 ? 0 : _ref3$total,
+      _ref3$analyzed = _ref3.analyzed,
+      analyzed = _ref3$analyzed === void 0 ? false : _ref3$analyzed;
+  void analyzed;
+  var isComplete = done === total && total > 0;
+  var iconSpan = sym(icon, isComplete ? 1 : 0, "text-primary text-3xl group-hover:text-secondary-container transition-colors");
+  var remaining = total - done;
+  var countBlock = isComplete || remaining <= 0 ? "<span class=\"font-body-bold text-lg text-on-surface\">".concat(done, "/").concat(total, "</span>") : "<div class=\"text-right\">" + "<span class=\"font-body-bold text-lg text-on-surface block leading-none\">".concat(done, "/").concat(total, "</span>") + "<span class=\"text-sm text-outline-variant font-caption mt-1 block\">".concat(remaining, " Remaining</span>") + "</div>";
+  var barPct = total ? done / total * 100 : 0;
+  return "<div class=\"bg-surface/85 backdrop-blur-xl border border-border-dim rounded-lg p-md card-glow transition-all duration-300 relative overflow-hidden group cursor-pointer border-t-2 border-t-secondary-container/30\" data-screen-link=\"".concat(screen, "\">") + "<div class=\"flex justify-between items-start mb-md\">".concat(iconSpan).concat(countBlock, "</div>") + "<h4 class=\"font-headline-md text-lg text-primary mb-sm\">".concat(label, "</h4>") + progressBar(barPct) + "</div>";
+}
+/**
+ * Bracketed monospace status token (DESIGN-MAP §3.12).
+ * @param {string} label
+ * @param {"complete"|"locked"|"unseen"|"sealed"|"broken"} kind
+ * @returns {string}
+ */
+
+function statusBadge(label) {
+  var kind = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "complete";
+  var cls;
+
+  switch (kind) {
+    case "locked":
+      cls = "font-code-path text-caption text-lichen-blue px-sm py-xs rounded bg-surface-glow border border-border-dim";
+      break;
+
+    case "unseen":
+      cls = "font-code-path text-caption text-surface-variant line-through px-sm py-xs rounded bg-surface-glow border border-border-dim";
+      break;
+
+    case "sealed":
+      cls = "font-code-path text-caption text-danger-scarlet px-sm py-xs rounded bg-danger-scarlet/10 border border-danger-scarlet/30";
+      break;
+
+    case "broken":
+      cls = "font-code-path text-caption text-success-green px-sm py-xs rounded bg-success-green/10 border border-success-green/30";
+      break;
+
+    case "complete":
+    default:
+      cls = "font-code-path text-caption text-secondary-container px-sm py-xs rounded bg-surface-glow border border-secondary-container/30";
+      break;
+  }
+
+  return "<span class=\"".concat(cls, "\">[").concat(label, "]</span>");
+}
+/**
+ * Generic entry row + the spoiler/blur contract carrier.
+ * Emits the .single-entry/.completed-item/.incomplete-item/.spoiler-span/
+ * .spoiler-span-green/.spoiler-text/.spoiler-red/.blurred/.wiki classes that
+ * the existing toggle logic (page-functions.js) requires verbatim.
+ * @param {{icon?:string, img?:string, name:string, meta?:string, statusLabel?:string,
+ *          complete?:boolean, spoiler?:string, wiki?:string, spoilerHtml?:boolean}} opts
+ * @returns {string}
+ */
+
+function listRow(_ref4) {
+  var _ref4$icon = _ref4.icon,
+      icon = _ref4$icon === void 0 ? "" : _ref4$icon,
+      _ref4$img = _ref4.img,
+      img = _ref4$img === void 0 ? "" : _ref4$img,
+      name = _ref4.name,
+      _ref4$meta = _ref4.meta,
+      meta = _ref4$meta === void 0 ? "" : _ref4$meta,
+      _ref4$statusLabel = _ref4.statusLabel,
+      statusLabel = _ref4$statusLabel === void 0 ? "" : _ref4$statusLabel,
+      _ref4$complete = _ref4.complete,
+      complete = _ref4$complete === void 0 ? false : _ref4$complete,
+      _ref4$spoiler = _ref4.spoiler,
+      spoiler = _ref4$spoiler === void 0 ? "" : _ref4$spoiler,
+      _ref4$wiki = _ref4.wiki,
+      wiki = _ref4$wiki === void 0 ? "" : _ref4$wiki,
+      _ref4$spoilerHtml = _ref4.spoilerHtml,
+      spoilerHtml = _ref4$spoilerHtml === void 0 ? true : _ref4$spoilerHtml;
+  var rowClass = complete ? "single-entry completed-item bg-surface-container/85 backdrop-blur-md border border-border-dim border-t-2 border-t-success-green/30 rounded-lg p-sm flex items-center gap-md hover:bg-surface-container-high transition-colors" : "single-entry incomplete-item bg-surface-container/85 backdrop-blur-md border border-border-dim border-t-2 border-t-danger-scarlet/30 rounded-lg p-sm flex items-center gap-md hover:bg-surface-container-high transition-colors"; // Optional left thumbnail: image (with glyph fallback) or a plain glyph.
+
+  var thumb = "";
+
+  if (img) {
+    var fallbackGlyph = sym(icon || "help_center", 0, "text-outline text-2xl");
+    thumb = "<div class=\"w-12 h-12 rounded border border-border-dim overflow-hidden relative flex items-center justify-center shrink-0\">" + "<img src=\"".concat(img, "\" class=\"w-12 h-12 rounded object-cover\" onerror=\"this.style.display='none';this.nextElementSibling.style.display='flex'\"/>") + "<span class=\"w-12 h-12 items-center justify-center absolute inset-0\" style=\"display:none\">".concat(fallbackGlyph, "</span>") + "</div>";
+  } else if (icon) {
+    thumb = sym(icon, complete ? 1 : 0, "text-primary text-2xl shrink-0");
+  } // Name: wiki link (blurred + spoiler-red when not complete) or plain bold.
+
+
+  var nameHtml;
+
+  if (wiki) {
+    var linkClass = complete ? "wiki" : "wiki spoiler-red blurred";
+    nameHtml = "<a class=\"".concat(linkClass, "\" href=\"").concat(WIKI).concat(wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>");
+  } else {
+    nameHtml = "<b>".concat(name, "</b>");
+  }
+
+  var metaHtml = meta ? "<p class=\"font-caption text-caption text-lichen-blue\">".concat(meta, "</p>") : ""; // Spoiler suffix — raw HTML injection when spoilerHtml (descriptions contain markup).
+
+  var spoilerHtmlStr = "";
+
+  if (spoiler) {
+    var spanClass = complete ? "spoiler-span-green" : "spoiler-span blurred";
+    var spoilerContent = spoilerHtml ? spoiler : escapeHtml(spoiler);
+    spoilerHtmlStr = " <span class=\"".concat(spanClass, "\"><span class=\"spoiler-text\">\u2014 ").concat(spoilerContent, "</span></span>");
+  }
+
+  var statusHtml = statusLabel ? "<div class=\"ml-auto shrink-0\">".concat(statusBadge(statusLabel, complete ? "complete" : "locked"), "</div>") : "";
+  return "<div class=\"".concat(rowClass, "\">") + thumb + "<div class=\"flex-grow min-w-0\">" + "<h4 class=\"font-body-bold text-on-surface\">".concat(nameHtml).concat(spoilerHtmlStr, "</h4>") + metaHtml + "</div>" + statusHtml + "</div>";
+}
+/**
+ * Boss portrait card (DESIGN-MAP §3.8). Defeated => image + skull badge;
+ * not defeated => locked "Unknown Entity" card. Carries .single-entry +
+ * completed-item/incomplete-item so filters/spoiler toggles still apply.
+ * @param {{name:string, desc?:string, img?:string, wiki?:string, defeated?:boolean}} opts
+ * @returns {string}
+ */
+
+function bossCard(_ref5) {
+  var name = _ref5.name,
+      _ref5$desc = _ref5.desc,
+      desc = _ref5$desc === void 0 ? "" : _ref5$desc,
+      _ref5$img = _ref5.img,
+      img = _ref5$img === void 0 ? "" : _ref5$img,
+      _ref5$wiki = _ref5.wiki,
+      wiki = _ref5$wiki === void 0 ? "" : _ref5$wiki,
+      _ref5$defeated = _ref5.defeated,
+      defeated = _ref5$defeated === void 0 ? false : _ref5$defeated;
+
+  if (defeated) {
+    var skullFallback = sym("skull", 1, "text-outline text-[48px] opacity-40");
+    var media = img ? "<div class=\"h-32 bg-surface-container-lowest relative\">" + "<img src=\"".concat(img, "\" class=\"w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity grayscale-[50%]\" onerror=\"this.style.display='none';this.nextElementSibling.style.display='flex'\"/>") + "<div class=\"w-full h-full items-center justify-center\" style=\"display:none\">".concat(skullFallback, "</div>") + "<div class=\"absolute inset-0 bg-gradient-to-t from-surface-container/90 to-transparent\"></div>" + "</div>" : "<div class=\"h-32 bg-surface-container-lowest relative flex items-center justify-center\">" + skullFallback + "<div class=\"absolute inset-0 bg-gradient-to-t from-surface-container/90 to-transparent\"></div>" + "</div>";
+    var nameHtml = wiki ? "<a class=\"wiki\" href=\"".concat(WIKI).concat(wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>") : "<b>".concat(name, "</b>");
+    var descHtml = desc ? "<p class=\"font-caption text-caption text-lichen-blue line-clamp-2\"><span class=\"spoiler-span-green\"><span class=\"spoiler-text\">".concat(desc, "</span></span></p>") : "";
+    return "<div class=\"single-entry completed-item bg-surface-container/85 backdrop-blur-md border-t-2 border-t-secondary-container/30 border-x border-b border-border-dim rounded-lg overflow-hidden flex flex-col group hover:bg-surface-container-high transition-colors relative\">" + media + "<div class=\"absolute top-2 right-2 bg-surface-glow border border-secondary-container/50 text-secondary-container px-2 py-1 rounded-full flex items-center gap-1 shadow-glow backdrop-blur-md\">" + sym("skull", 1, "text-[14px]") + "</div>" + "<div class=\"p-md\"><h4 class=\"font-body-bold text-on-surface\">".concat(nameHtml, "</h4>").concat(descHtml, "</div>") + "</div>";
+  } // Locked / undiscovered.
+
+
+  var lockedDesc = desc ? "<p class=\"text-outline-variant\"><span class=\"spoiler-span blurred\"><span class=\"spoiler-text\">".concat(desc, "</span></span></p>") : "<p class=\"text-outline-variant\">Lurking in the deepnest shadows...</p>";
+  return "<div class=\"single-entry incomplete-item bg-surface-container/40 backdrop-blur-md border border-border-dim rounded-lg overflow-hidden flex flex-col relative opacity-70 grayscale\">" + "<div class=\"h-32 flex items-center justify-center\">" + sym("help_center", 0, "text-outline text-[48px] opacity-20") + "</div>" + "<div class=\"p-md bg-surface-container/50\">" + "<h4 class=\"font-body-bold text-outline mb-xs italic\">Unknown Entity</h4>" + lockedDesc + "</div>" + "</div>";
+}
+/**
+ * Centered empty-state prompt (locked-card idiom).
+ * @param {string} msg
+ * @returns {string}
+ */
+
+function emptyState() {
+  var msg = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "Load your save file to begin";
+  return "<div class=\"bg-surface-container/40 backdrop-blur-md border border-border-dim rounded-xl p-xl flex flex-col items-center justify-center text-center gap-md opacity-80\">" + sym("help_center", 0, "text-outline text-[48px] opacity-30") + "<p class=\"font-headline-md text-headline-md text-outline italic\">".concat(msg, "</p>") + "</div>";
+}
+/* -------------------------------------------------------------------------- */
+
+/* internal helper (not exported)                                             */
+
+/* -------------------------------------------------------------------------- */
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+/***/ }),
+
+/***/ "./src/js/ledger-screens.js":
+/*!**********************************!*\
+  !*** ./src/js/ledger-screens.js ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "countRuleA": () => (/* binding */ countRuleA),
+/* harmony export */   "countSections": () => (/* binding */ countSections),
+/* harmony export */   "BOSS_IMG": () => (/* binding */ BOSS_IMG),
+/* harmony export */   "renderGenericScreen": () => (/* binding */ renderGenericScreen),
+/* harmony export */   "SCREENS": () => (/* binding */ SCREENS),
+/* harmony export */   "screenCount": () => (/* binding */ screenCount),
+/* harmony export */   "renderAllScreens": () => (/* binding */ renderAllScreens)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _screens_spells_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./screens/spells.js */ "./src/js/screens/spells.js");
+/* harmony import */ var _screens_abilities_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./screens/abilities.js */ "./src/js/screens/abilities.js");
+/* harmony import */ var _screens_nailarts_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./screens/nailarts.js */ "./src/js/screens/nailarts.js");
+/* harmony import */ var _screens_masks_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./screens/masks.js */ "./src/js/screens/masks.js");
+/* harmony import */ var _screens_vessels_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./screens/vessels.js */ "./src/js/screens/vessels.js");
+/* harmony import */ var _screens_lore_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./screens/lore.js */ "./src/js/screens/lore.js");
+/* harmony import */ var _screens_bestiary_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./screens/bestiary.js */ "./src/js/screens/bestiary.js");
+/* harmony import */ var _screens_dream_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./screens/dream.js */ "./src/js/screens/dream.js");
+/* harmony import */ var _screens_colosseum_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./screens/colosseum.js */ "./src/js/screens/colosseum.js");
+/* harmony import */ var _screens_pantheons_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./screens/pantheons.js */ "./src/js/screens/pantheons.js");
+/* harmony import */ var _screens_geo_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./screens/geo.js */ "./src/js/screens/geo.js");
+/* harmony import */ var _screens_secrets_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./screens/secrets.js */ "./src/js/screens/secrets.js");
+/* harmony import */ var _screens_collectibles_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./screens/collectibles.js */ "./src/js/screens/collectibles.js");
+/* harmony import */ var _screens_content_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./screens/content.js */ "./src/js/screens/content.js");
+/* harmony import */ var _screens_essentials_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./screens/essentials.js */ "./src/js/screens/essentials.js");
+/* harmony import */ var _screens_statistics_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./screens/statistics.js */ "./src/js/screens/statistics.js");
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+/**
+ * ledger-screens.js — Knight's Ledger screen registry + completion counting +
+ * per-screen renderers.
+ *
+ * Consumes the shared component library (ledger-components.js) to build the
+ * single `#generated.innerHTML` string, one <section> per sidebar screen.
+ *
+ * AUTHORING CONTRACT (see DESIGN-MAP §3 / tailwind.config.js):
+ *  - Every Tailwind class is a COMPLETE static string literal so the build-time
+ *    content scanner (globs ./src/**\/*.{html,js}) keeps it. Ternaries choose
+ *    between full class strings — never concatenate/interpolate class fragments.
+ *  - The ONLY runtime-computed values (progress width %, gauge rotation) are
+ *    emitted as inline `style="width:NN%"` — never as `w-[NN%]`.
+ *  - Icons are Material Symbols Outlined via C.sym() (FILL 1 = active/complete).
+ *  - Dark theme only; tokens come from tailwind.config.js (no invented colors).
+ *  - Spoiler/blur classes (.single-entry/.completed-item/.incomplete-item/
+ *    .spoiler-span/.spoiler-span-green/.spoiler-text/.spoiler-red/.blurred/
+ *    .wiki/.hint) are emitted verbatim so the existing toggle logic keeps working.
+ *
+ * COMPLETION RULE A (DESIGN-MAP §1.2 A) drives every badge / card count:
+ *   iterate section.entries; skip entry.disabled===true (from numerator AND
+ *   denominator); done++ when entry.icon is a "done" icon (see RULE_A_ICONS).
+ */
+
+/* Bespoke per-screen renderers (Phase 2). Each screens/<id>.js exports render(db). */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* screen id -> bespoke renderer; overrides the generic renderer in renderAllScreens */
+
+var BESPOKE = {
+  spells: _screens_spells_js__WEBPACK_IMPORTED_MODULE_1__.render,
+  abilities: _screens_abilities_js__WEBPACK_IMPORTED_MODULE_2__.render,
+  nailarts: _screens_nailarts_js__WEBPACK_IMPORTED_MODULE_3__.render,
+  masks: _screens_masks_js__WEBPACK_IMPORTED_MODULE_4__.render,
+  vessels: _screens_vessels_js__WEBPACK_IMPORTED_MODULE_5__.render,
+  lore: _screens_lore_js__WEBPACK_IMPORTED_MODULE_6__.render,
+  bestiary: _screens_bestiary_js__WEBPACK_IMPORTED_MODULE_7__.render,
+  dream: _screens_dream_js__WEBPACK_IMPORTED_MODULE_8__.render,
+  colosseum: _screens_colosseum_js__WEBPACK_IMPORTED_MODULE_9__.render,
+  pantheons: _screens_pantheons_js__WEBPACK_IMPORTED_MODULE_10__.render,
+  geo: _screens_geo_js__WEBPACK_IMPORTED_MODULE_11__.render,
+  secrets: _screens_secrets_js__WEBPACK_IMPORTED_MODULE_12__.render,
+  collectibles: _screens_collectibles_js__WEBPACK_IMPORTED_MODULE_13__.render,
+  content: _screens_content_js__WEBPACK_IMPORTED_MODULE_14__.render,
+  essentials: _screens_essentials_js__WEBPACK_IMPORTED_MODULE_15__.render,
+  statistics: _screens_statistics_js__WEBPACK_IMPORTED_MODULE_16__.render
+};
+/* -------------------------------------------------------------------------- */
+
+/* Completion counting (Rule A)                                               */
+
+/* -------------------------------------------------------------------------- */
+
+/** Icons that count as "done" under Rule A (renderer / badge / section rule). */
+
+var RULE_A_ICONS = new Set(["green", "bindingNail", "bindingShell", "bindingCharms", "bindingSoul", "bindingAll", "attuned", "ascended", "radiant", "none"]);
+/**
+ * True when an entry should render in its "complete" visual state. Disabled
+ * entries are treated as complete for rendering (they are irrelevant to this
+ * save) even though Rule A drops them from counts entirely.
+ * @param {object} entry
+ * @returns {boolean}
+ */
+
+function isEntryComplete(entry) {
+  if (!entry) return false;
+  if (entry.disabled === true) return true;
+  return RULE_A_ICONS.has(entry.icon);
+}
+/**
+ * Rule A count over a single section. Disabled entries are excluded from both
+ * numerator and denominator.
+ * @param {object} section  a db.sections[key] object (or falsy)
+ * @returns {{done:number, total:number}}
+ */
+
+
+function countRuleA(section) {
+  var done = 0;
+  var total = 0;
+  if (!section || !section.entries) return {
+    done: done,
+    total: total
+  };
+
+  for (var key in section.entries) {
+    if (!Object.prototype.hasOwnProperty.call(section.entries, key)) continue;
+    var entry = section.entries[key];
+    if (!entry || entry.disabled === true) continue;
+    total++;
+    if (RULE_A_ICONS.has(entry.icon)) done++;
+  }
+
+  return {
+    done: done,
+    total: total
+  };
+}
+/**
+ * Sum Rule A over the section keys that actually exist in db.sections.
+ * @param {object} db     the HK singleton
+ * @param {string[]} keys section keys
+ * @returns {{done:number, total:number}}
+ */
+
+function countSections(db, keys) {
+  var done = 0;
+  var total = 0;
+  if (!db || !db.sections || !Array.isArray(keys)) return {
+    done: done,
+    total: total
+  };
+
+  var _iterator = _createForOfIteratorHelper(keys),
+      _step;
+
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var key = _step.value;
+      var section = db.sections[key];
+      if (!section) continue;
+      var c = countRuleA(section);
+      done += c.done;
+      total += c.total;
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+
+  return {
+    done: done,
+    total: total
+  };
+}
+/* -------------------------------------------------------------------------- */
+
+/* Boss portrait image map (hotlinked Fandom Special:FilePath — best guess)   */
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Hotlink boss portrait art for the 14 main-% bosses, keyed by db.sections.bosses
+ * entry key (the same key renderBosses uses for the lookup). URLs are the
+ * verified infobox images served by Fandom's CDN (static.wikia.nocookie.net),
+ * resolved via the MediaWiki pageimages API against each boss's wiki page and
+ * confirmed to return HTTP 200 image content. bossCard's <img onerror> still
+ * falls back to the skull glyph if any image ever fails to load. Only passed to
+ * bossCard when the boss is defeated.
+ *
+ * Note: on the current wiki, Hornet Protector and Hornet Sentinel share a single
+ * infobox image (B_Hornet2.png), so both map to the same URL.
+ */
+
+var BOSS_IMG = {
+  bossGruzMother: "https://static.wikia.nocookie.net/hollowknight/images/9/9f/B_Gruz_Mother.png/revision/latest?cb=20170410171339",
+  falseKnightDefeated: "https://static.wikia.nocookie.net/hollowknight/images/9/98/B_False_Knight.png/revision/latest?cb=20181129012523",
+  hornet1Defeated: "https://static.wikia.nocookie.net/hollowknight/images/8/80/B_Hornet2.png/revision/latest?cb=20251028035041",
+  defeatedDungDefender: "https://static.wikia.nocookie.net/hollowknight/images/0/0e/B_Dung_Defender.png/revision/latest?cb=20180821144213",
+  bossBroodingMawlek: "https://static.wikia.nocookie.net/hollowknight/images/4/42/B_Brooding_Mawlek2.png/revision/latest?cb=20180821143716",
+  mageLordDefeated: "https://static.wikia.nocookie.net/hollowknight/images/c/cf/B_Soulmaster.png/revision/latest?cb=20180821144031",
+  defeatedMantisLords: "https://static.wikia.nocookie.net/hollowknight/images/2/2d/B_Mantis_Lords-2.png/revision/latest?cb=20180821145144",
+  killedMimicSpider: "https://static.wikia.nocookie.net/hollowknight/images/a/a8/B_Nosk.png/revision/latest?cb=20170412183621",
+  killedInfectedKnight: "https://static.wikia.nocookie.net/hollowknight/images/3/30/B_Broken_Vessel-2.png/revision/latest?cb=20180821144714",
+  collectorDefeated: "https://static.wikia.nocookie.net/hollowknight/images/d/d5/B_Collector.png/revision/latest?cb=20170412130603",
+  defeatedMegaJelly: "https://static.wikia.nocookie.net/hollowknight/images/4/49/B_Uumuu.png/revision/latest?cb=20170412092250",
+  hornetOutskirtsDefeated: "https://static.wikia.nocookie.net/hollowknight/images/8/80/B_Hornet2.png/revision/latest?cb=20251028035041",
+  killedTraitorLord: "https://static.wikia.nocookie.net/hollowknight/images/2/2c/B_Traitor_Lord.png/revision/latest?cb=20170412201256",
+  killedBlackKnight: "https://static.wikia.nocookie.net/hollowknight/images/9/9b/B_Watcher_Knight-2.png/revision/latest?cb=20180827012908"
+};
+/* -------------------------------------------------------------------------- */
+
+/* Small local helpers                                                        */
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Strip HTML tags + collapse whitespace from a section description so it can be
+ * used as a plain, short subtitle (avoids leaking spoiler-span content).
+ * @param {string} [desc]
+ * @returns {string}
+ */
+
+function shortText(desc) {
+  if (!desc) return "";
+  var stripped = String(desc).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return stripped.length > 120 ? stripped.slice(0, 117) + "…" : stripped;
+}
+/**
+ * Build the name (wiki link or bold) + spoiler-suffix HTML that carries the
+ * blur/spoiler class contract. Mirrors listRow()'s treatment for the bespoke
+ * charm/grub tiles. Spoiler text is injected as raw HTML (descriptions may
+ * contain markup).
+ * @param {object} entry
+ * @param {boolean} complete
+ * @returns {{nameHtml:string, spoilerHtml:string}}
+ */
+
+
+function nameSpoiler(entry, complete) {
+  var name = entry && entry.name != null ? String(entry.name) : "";
+  var nameHtml;
+
+  if (entry && entry.wiki) {
+    var linkClass = complete ? "wiki" : "wiki spoiler-red blurred";
+    nameHtml = "<a class=\"".concat(linkClass, "\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(entry.wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>");
+  } else {
+    nameHtml = "<b>".concat(name, "</b>");
+  }
+
+  var spoilerHtml = "";
+
+  if (entry && entry.spoiler) {
+    var spanClass = complete ? "spoiler-span-green" : "spoiler-span blurred";
+    spoilerHtml = "<span class=\"".concat(spanClass, "\"><span class=\"spoiler-text\">\u2014 ").concat(entry.spoiler, "</span></span>");
+  }
+
+  return {
+    nameHtml: nameHtml,
+    spoilerHtml: spoilerHtml
+  };
+}
+/**
+ * Statistics value row: label + wiki link + a mono value pill (no completion
+ * state). Uses entry.amount over entry.amountTotal / entry.max when present.
+ * @param {object} entry
+ * @returns {string}
+ */
+
+
+function valueRow(entry) {
+  var name = entry && entry.name != null ? String(entry.name) : "";
+  var nameHtml = entry && entry.wiki ? "<a class=\"wiki\" href=\"".concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(entry.wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>") : "<b>".concat(name, "</b>");
+  var spoilerHtml = entry && entry.spoiler ? " <span class=\"spoiler-span-green\"><span class=\"spoiler-text\">\u2014 ".concat(entry.spoiler, "</span></span>") : "";
+  var value = entry && entry.amount != null ? entry.amount : "";
+  var totalVal = entry && entry.amountTotal != null ? entry.amountTotal : entry && entry.max != null ? entry.max : null;
+  var valueText = totalVal != null ? "".concat(value, "/").concat(totalVal) : "".concat(value);
+  return "<div class=\"single-entry bg-surface-container/85 backdrop-blur-md border border-border-dim rounded-lg p-sm flex items-center gap-md\">" + "<div class=\"flex-grow min-w-0\"><h4 class=\"font-body-bold text-on-surface\">".concat(nameHtml).concat(spoilerHtml, "</h4></div>") + "<span class=\"font-code-path text-secondary-container bg-surface-glow px-2 py-1 rounded border border-border-dim shrink-0\">".concat(valueText, "</span>") + "</div>";
+}
+/* -------------------------------------------------------------------------- */
+
+/* Generic renderer                                                           */
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Default per-screen renderer: for each backing section that exists, a section
+ * header (Rule A count) + its entries as list rows. The Statistics screen
+ * renders value rows with no completion state and no count pill.
+ * @param {{id:string, sections:string[]}} screen
+ * @param {object} db
+ * @returns {string}
+ */
+
+
+function renderGenericScreen(screen, db) {
+  if (!screen || !db || !db.sections) return "";
+  var isStats = screen.id === "statistics";
+  var html = "";
+
+  var _iterator2 = _createForOfIteratorHelper(screen.sections),
+      _step2;
+
+  try {
+    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+      var key = _step2.value;
+      var section = db.sections[key];
+      if (!section) continue;
+
+      var _countRuleA = countRuleA(section),
+          done = _countRuleA.done,
+          total = _countRuleA.total;
+
+      html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+        title: section.h2 || key,
+        subtitle: shortText(section.description),
+        done: isStats ? null : done,
+        total: isStats ? null : total
+      });
+      html += "<div class=\"space-y-sm mb-lg\">";
+      var entries = section.entries || {};
+
+      for (var ekey in entries) {
+        if (!Object.prototype.hasOwnProperty.call(entries, ekey)) continue;
+        var entry = entries[ekey];
+        if (!entry) continue;
+
+        if (isStats) {
+          html += valueRow(entry);
+        } else {
+          html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.listRow({
+            name: entry.name != null ? String(entry.name) : ekey,
+            meta: "",
+            spoiler: entry.spoiler != null ? String(entry.spoiler) : "",
+            wiki: entry.wiki || "",
+            complete: isEntryComplete(entry),
+            spoilerHtml: true
+          });
+        }
+      }
+
+      html += "</div>";
+    }
+  } catch (err) {
+    _iterator2.e(err);
+  } finally {
+    _iterator2.f();
+  }
+
+  return html;
+}
+/**
+ * Bound generic renderer used as `render` for non-bespoke screens.
+ * `this` is the screen object (set by renderAllScreens calling screen.render).
+ * @this {{id:string, sections:string[]}}
+ * @param {object} db
+ * @returns {string}
+ */
+
+function renderGeneric(db) {
+  return renderGenericScreen(this, db);
+}
+/* -------------------------------------------------------------------------- */
+
+/* Flagship (bespoke) renderers                                               */
+
+/* -------------------------------------------------------------------------- */
+
+/** Dashboard screens shown as bento cards (every counted category). */
+
+
+var BENTO_SCREENS = ["charms", "bosses", "grubs", "spells", "abilities", "masks", "vessels", "lore", "bestiary", "nailarts", "dream", "colosseum", "pantheons", "geo", "secrets", "collectibles", "content", "essentials"];
+/** Interactive external map linked from the Dashboard (Cartographer's Map). */
+
+var CARTOGRAPHER_MAP = "<a href=\"https://mapgenie.io/hollow-knight/maps/hallownest\" target=\"_blank\" rel=\"noopener\" " + "class=\"block w-full rounded-xl overflow-hidden relative border-2 border-dashed border-secondary-container/40 hover:border-secondary-container/80 transition-colors duration-500 group bg-surface-container-low min-h-[120px] flex items-center justify-center mb-section-gap\">" + "<div class=\"absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent\"></div>" + "<div class=\"relative z-10 text-center p-lg\">" + "<span class=\"material-symbols-outlined text-secondary-container text-3xl mb-xs\" style=\"font-variation-settings:'FILL' 1;\">map</span>" + "<h3 class=\"font-display-lg text-headline-md text-secondary group-hover:text-secondary-container transition-colors\">Cartographer's Map</h3>" + "<p class=\"font-body-base text-secondary/70 flex items-center justify-center gap-xs\"><span class=\"material-symbols-outlined text-sm\">open_in_new</span> Interactive Hallownest Map</p>" + "</div></a>";
+/**
+ * Dashboard: hero (game % + True Completion) + a 2-col bento of category cards
+ * + the current Elderbug hint (kept in #hk-hints so the Hints toggle works).
+ * @param {object} db
+ * @returns {string}
+ */
+
+function renderDashboard(db) {
+  var sections = db && db.sections ? db.sections : {};
+  var intro = sections.intro || {};
+  var analyzed = !!(db && db.saveAnalyzed);
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.hero({
+    percent: intro.percent || 0,
+    maxPercent: intro.maxPercent || 112,
+    trueDone: intro.extendedCompletionDone || 0,
+    trueTotal: intro.extendedCompletionTotal || 0,
+    analyzed: analyzed
+  });
+  html += CARTOGRAPHER_MAP;
+  html += "<div class=\"grid grid-cols-1 sm:grid-cols-2 gap-md mb-section-gap\">";
+
+  var _iterator3 = _createForOfIteratorHelper(BENTO_SCREENS),
+      _step3;
+
+  try {
+    var _loop = function _loop() {
+      var id = _step3.value;
+      var screen = SCREENS.find(function (s) {
+        return s.id === id;
+      });
+      if (!screen) return "continue";
+
+      var _countSections = countSections(db, screen.sections),
+          done = _countSections.done,
+          total = _countSections.total;
+
+      html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.categoryCard({
+        icon: screen.icon,
+        label: screen.label,
+        screen: screen.id,
+        done: done,
+        total: total,
+        analyzed: analyzed
+      });
+    };
+
+    for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+      var _ret = _loop();
+
+      if (_ret === "continue") continue;
+    }
+  } catch (err) {
+    _iterator3.e(err);
+  } finally {
+    _iterator3.f();
+  }
+
+  html += "</div>";
+  var hints = sections.hints;
+
+  if (hints && hints.entries) {
+    var cur = hints.current ? hints.entries[hints.current] : null;
+    var hintText = cur && cur.spoiler ? cur.spoiler : "";
+    html += "<div id=\"hk-hints\" class=\"bg-surface-container/40 backdrop-blur-md border border-border-dim rounded-lg p-md text-center\">" + "<p class=\"hint font-body-base text-lichen-blue italic\">".concat(hintText, "</p>") + "</div>";
+  }
+
+  return html;
+}
+/**
+ * Bosses: section header + a grid-cols-2 grid of boss portrait cards. Defeated
+ * (icon "green") shows portrait art + skull badge; otherwise a locked card.
+ * @param {object} db
+ * @returns {string}
+ */
+
+
+function renderBosses(db) {
+  var section = db && db.sections ? db.sections.bosses : null;
+  if (!section) return "";
+
+  var _countRuleA2 = countRuleA(section),
+      done = _countRuleA2.done,
+      total = _countRuleA2.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Bosses",
+    subtitle: shortText(section.description),
+    done: done,
+    total: total
+  });
+  html += "<div class=\"grid grid-cols-2 gap-md\">";
+  var entries = section.entries || {};
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry) continue;
+    var defeated = entry.icon === "green";
+    var img = defeated ? BOSS_IMG[key] || "" : "";
+    html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.bossCard({
+      name: entry.name != null ? String(entry.name) : key,
+      desc: entry.spoiler != null ? String(entry.spoiler) : "",
+      img: img,
+      wiki: entry.wiki || "",
+      defeated: defeated
+    });
+  }
+
+  html += "</div>";
+  return html;
+}
+
+var CHARM_TILE_ACTIVE = "single-entry completed-item bg-surface-container/85 backdrop-blur-md border border-border-dim border-t-2 border-t-success-green/30 rounded-lg p-sm flex items-center gap-md hover:bg-surface-container-high transition-colors";
+var CHARM_TILE_DIM = "single-entry incomplete-item bg-surface-container/40 backdrop-blur-md border border-border-dim rounded-lg p-sm flex items-center gap-md opacity-80";
+/**
+ * Charms: section header + a grid of charm tiles. Complete charms get an amber
+ * ring + filled glyph; incomplete are dim. Name + spoiler use the blur contract.
+ * @param {object} db
+ * @returns {string}
+ */
+
+function renderCharms(db) {
+  var section = db && db.sections ? db.sections.charms : null;
+  if (!section) return "";
+
+  var _countRuleA3 = countRuleA(section),
+      done = _countRuleA3.done,
+      total = _countRuleA3.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Charms",
+    subtitle: shortText(section.description),
+    done: done,
+    total: total
+  });
+  html += "<div class=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md\">";
+  var entries = section.entries || {};
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry) continue;
+    var complete = isEntryComplete(entry);
+
+    var _nameSpoiler = nameSpoiler(entry, complete),
+        nameHtml = _nameSpoiler.nameHtml,
+        spoilerHtml = _nameSpoiler.spoilerHtml;
+
+    var tile = complete ? "<div class=\"aspect-square w-14 h-14 rounded-full border-2 border-secondary-container bg-surface-glow flex items-center justify-center shadow-glow shrink-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym("auto_awesome", 1, "text-secondary-container text-2xl") + "</div>" : "<div class=\"aspect-square w-14 h-14 rounded-full border border-border-dim bg-surface-container/40 flex items-center justify-center opacity-60 shrink-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym("auto_awesome", 0, "text-outline text-2xl") + "</div>";
+    var cardClass = complete ? CHARM_TILE_ACTIVE : CHARM_TILE_DIM;
+    html += "<div class=\"".concat(cardClass, "\">") + tile + "<div class=\"flex-grow min-w-0\"><h4 class=\"font-body-bold text-on-surface\">".concat(nameHtml, " ").concat(spoilerHtml, "</h4></div>") + "</div>";
+  }
+
+  html += "</div>"; // Charm Notches sub-section — rendered here so the on-screen count matches the
+  // sidebar badge [x/y], which sums charms + charmNotches.
+
+  var notches = db && db.sections ? db.sections.charmNotches : null;
+
+  if (notches && notches.entries) {
+    var nc = countRuleA(notches);
+    html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.fleurDivider();
+    html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+      title: notches.h2 || "Charm Notches",
+      subtitle: shortText(notches.description),
+      done: nc.done,
+      total: nc.total
+    });
+    html += "<div class=\"space-y-sm\">";
+
+    for (var _key in notches.entries) {
+      if (!Object.prototype.hasOwnProperty.call(notches.entries, _key)) continue;
+      var _entry = notches.entries[_key];
+      if (!_entry) continue;
+      html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.listRow({
+        name: _entry.name != null ? String(_entry.name) : _key,
+        spoiler: _entry.spoiler != null ? String(_entry.spoiler) : "",
+        wiki: _entry.wiki || "",
+        complete: isEntryComplete(_entry),
+        spoilerHtml: true
+      });
+    }
+
+    html += "</div>";
+  }
+
+  return html;
+}
+
+var GRUB_CARD_RESCUED = "single-entry completed-item bg-surface-container/85 backdrop-blur-md border border-border-dim border-t-2 border-t-secondary-container/30 rounded-lg p-md flex flex-col hover:bg-surface-container-high transition-colors";
+var GRUB_CARD_TRAPPED = "single-entry incomplete-item bg-surface-container/40 backdrop-blur-md border border-border-dim rounded-lg p-md flex flex-col opacity-70";
+/**
+ * Grubs: section header + a grid of grub glyph cards (bug_report + #N index).
+ * Rescued grubs glow amber; trapped grubs are dim. Name/location use the blur
+ * contract.
+ * @param {object} db
+ * @returns {string}
+ */
+
+function renderGrubs(db) {
+  var section = db && db.sections ? db.sections.grubs : null;
+  if (!section) return "";
+
+  var _countRuleA4 = countRuleA(section),
+      done = _countRuleA4.done,
+      total = _countRuleA4.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Grubs",
+    subtitle: shortText(section.description),
+    done: done,
+    total: total
+  });
+  html += "<div class=\"grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-md\">";
+  var entries = section.entries || {};
+  var idx = 0;
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry) continue;
+    idx++;
+    var rescued = isEntryComplete(entry);
+
+    var _nameSpoiler2 = nameSpoiler(entry, rescued),
+        nameHtml = _nameSpoiler2.nameHtml,
+        spoilerHtml = _nameSpoiler2.spoilerHtml;
+
+    var glyphRow = rescued ? "<div class=\"flex items-center justify-between mb-sm\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym("bug_report", 1, "text-secondary-container text-2xl") + "<span class=\"font-code-path text-secondary-container\">#".concat(idx, "</span>") + "</div>" : "<div class=\"flex items-center justify-between mb-sm\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym("bug_report", 0, "text-outline text-2xl") + "<span class=\"font-code-path text-outline\">#".concat(idx, "</span>") + "</div>";
+    var cardClass = rescued ? GRUB_CARD_RESCUED : GRUB_CARD_TRAPPED;
+    html += "<div class=\"".concat(cardClass, "\">") + glyphRow + "<h4 class=\"font-body-bold text-on-surface\">".concat(nameHtml, "</h4>") + "<p class=\"font-caption text-caption text-lichen-blue mt-xs\">".concat(spoilerHtml, "</p>") + "</div>";
+  }
+
+  html += "</div>";
+  return html;
+}
+/* -------------------------------------------------------------------------- */
+
+/* Screen registry                                                            */
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The sidebar screen registry. Each screen maps to one or more db.sections keys
+ * and knows how to render itself. `render(db) -> htmlString`.
+ * @type {Array<{id:string, label:string, icon:string, sections:string[], render:(db:object)=>string}>}
+ */
+
+
+var SCREENS = [{
+  id: "dashboard",
+  label: "Dashboard",
+  icon: "home",
+  sections: [],
+  render: renderDashboard
+}, {
+  id: "charms",
+  label: "Charms",
+  icon: "auto_awesome",
+  sections: ["charms", "charmNotches"],
+  render: renderCharms
+}, {
+  id: "bosses",
+  label: "Bosses",
+  icon: "swords",
+  sections: ["bosses"],
+  render: renderBosses
+}, {
+  id: "grubs",
+  label: "Grubs",
+  icon: "bug_report",
+  sections: ["grubs"],
+  render: renderGrubs
+}, {
+  id: "spells",
+  label: "Spells",
+  icon: "auto_fix_high",
+  sections: ["spells"],
+  render: renderGeneric
+}, {
+  id: "abilities",
+  label: "Abilities",
+  icon: "bolt",
+  sections: ["equipment"],
+  render: renderGeneric
+}, {
+  id: "masks",
+  label: "Masks",
+  icon: "vibration",
+  sections: ["maskShards"],
+  render: renderGeneric
+}, {
+  id: "vessels",
+  label: "Vessels",
+  icon: "opacity",
+  sections: ["vesselFragments"],
+  render: renderGeneric
+}, {
+  id: "lore",
+  label: "Lore",
+  icon: "menu_book",
+  sections: ["relicsWanderersJournal", "relicsHallownestSeal", "relicsKingsIdol", "relicsArcaneEgg", "whisperingRoots"],
+  render: renderGeneric
+}, {
+  id: "bestiary",
+  label: "Bestiary",
+  icon: "pest_control",
+  sections: ["huntersJournal", "huntersJournalOptional"],
+  render: renderGeneric
+}, {
+  id: "nailarts",
+  label: "Nail Arts",
+  icon: "cyclone",
+  sections: ["nailArts", "nailUpgrades"],
+  render: renderGeneric
+}, {
+  id: "dream",
+  label: "Dream Realm",
+  icon: "visibility",
+  sections: ["dreamNail", "warriorDreams", "dreamers"],
+  render: renderGeneric
+}, {
+  id: "colosseum",
+  label: "Colosseum",
+  icon: "emoji_events",
+  sections: ["colosseum"],
+  render: renderGeneric
+}, {
+  id: "pantheons",
+  label: "Pantheons",
+  icon: "account_balance",
+  sections: ["pantheonOfTheMaster", "pantheonOfTheArtist", "pantheonOfTheSage", "pantheonOfTheKnight", "pantheonOfHallownest", "hallOfGods", "godhomeStatistics"],
+  render: renderGeneric
+}, {
+  id: "geo",
+  label: "Geo Caches",
+  icon: "paid",
+  sections: ["geoChests", "geoRocks"],
+  render: renderGeneric
+}, {
+  id: "secrets",
+  label: "Secrets",
+  icon: "lock",
+  sections: ["worldInteractions", "secretRooms", "corniferNotes"],
+  render: renderGeneric
+}, {
+  id: "collectibles",
+  label: "Collectibles",
+  icon: "inventory_2",
+  sections: ["rancidEggs", "items"],
+  render: renderGeneric
+}, {
+  id: "content",
+  label: "Content Packs",
+  icon: "extension",
+  sections: ["grimmTroupe", "lifeblood", "godmaster"],
+  render: renderGeneric
+}, {
+  id: "essentials",
+  label: "Essentials",
+  icon: "verified",
+  sections: ["essentialsCollectibles", "essentialsStagStations", "essentialsWorldInteractions", "essentialsBosses", "achievementsCollectibles", "achievementsMaps", "achievementsWorldInteractions", "achievementsBosses"],
+  render: renderGeneric
+}, {
+  id: "statistics",
+  label: "Statistics",
+  icon: "query_stats",
+  sections: ["statistics"],
+  render: renderGeneric
+}];
+/* -------------------------------------------------------------------------- */
+
+/* Orchestration exports (called by the integrator)                           */
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Badge count for a screen. Dashboard uses game-% (rule C: rounded
+ * intro.percent / intro.maxPercent); Statistics is badge-less ({0,0}); every
+ * other screen sums Rule A over its backing sections.
+ * @param {{id:string, sections:string[]}} screen
+ * @param {object} db
+ * @returns {{done:number, total:number}}
+ */
+
+function screenCount(screen, db) {
+  if (!screen) return {
+    done: 0,
+    total: 0
+  };
+  if (screen.id === "statistics") return {
+    done: 0,
+    total: 0
+  };
+
+  if (screen.id === "dashboard") {
+    var intro = db && db.sections ? db.sections.intro : null;
+
+    if (intro && intro.maxPercent) {
+      return {
+        done: Math.round(intro.percent || 0),
+        total: intro.maxPercent
+      };
+    }
+
+    return {
+      done: 0,
+      total: 0
+    };
+  }
+
+  return countSections(db, screen.sections);
+}
+/**
+ * Render every screen into one string. Each screen's inner content is wrapped
+ * in <section class="ledger-screen" data-screen="ID"> (visibility is the
+ * router's job — no `hidden` attribute here) with an mb-section-gap container.
+ * @param {object} db
+ * @returns {string}
+ */
+
+function renderAllScreens(db) {
+  var html = "";
+
+  var _iterator4 = _createForOfIteratorHelper(SCREENS),
+      _step4;
+
+  try {
+    for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+      var screen = _step4.value;
+      var renderFn = BESPOKE[screen.id] || screen.render;
+      var inner = void 0;
+
+      try {
+        inner = renderFn(db);
+      } catch (err) {
+        if (typeof console !== "undefined") console.error("Screen render failed:", screen.id, err);
+        inner = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("This screen could not be rendered.");
+      }
+
+      html += "<section class=\"ledger-screen\" data-screen=\"".concat(screen.id, "\">") + "<div class=\"mb-section-gap\">".concat(inner, "</div>") + "</section>";
+    }
+  } catch (err) {
+    _iterator4.e(err);
+  } finally {
+    _iterator4.f();
+  }
+
+  return html;
+}
+
+/***/ }),
+
+/***/ "./src/js/ledger-util.js":
+/*!*******************************!*\
+  !*** ./src/js/ledger-util.js ***!
+  \*******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "DONE_SET": () => (/* binding */ DONE_SET),
+/* harmony export */   "isEntryComplete": () => (/* binding */ isEntryComplete),
+/* harmony export */   "countRuleA": () => (/* binding */ countRuleA),
+/* harmony export */   "countSections": () => (/* binding */ countSections),
+/* harmony export */   "shortText": () => (/* binding */ shortText),
+/* harmony export */   "escapeHtml": () => (/* binding */ escapeHtml)
+/* harmony export */ });
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+/* Shared, presentation-free helpers for the Knight's Ledger screen renderers.
+   This is a LEAF module (imports nothing from ledger-screens.js) so per-screen
+   render modules under ./screens/ can import it without a circular dependency. */
+
+/* Completion RULE A — an entry is "done" if its icon is one of these.
+   (True Completion and the 112% game total are DIFFERENT rules — do not use this for them.) */
+var DONE_SET = new Set(["green", "bindingNail", "bindingShell", "bindingCharms", "bindingSoul", "bindingAll", "attuned", "ascended", "radiant", "none"]);
+/**
+ * Is a single entry complete for badge/hiding purposes (rule A)?
+ * `disabled` entries are treated as complete (they never appear as outstanding work).
+ * @param {object} entry
+ * @returns {boolean}
+ */
+
+function isEntryComplete(entry) {
+  if (!entry) return false;
+  if (entry.disabled === true) return true;
+  return DONE_SET.has(entry.icon);
+}
+/**
+ * Count a section's entries under rule A. `disabled` entries are skipped entirely
+ * (excluded from BOTH numerator and denominator).
+ * @param {object} section a db.sections[key] object
+ * @returns {{done:number, total:number}}
+ */
+
+function countRuleA(section) {
+  var done = 0;
+  var total = 0;
+  if (!section || !section.entries) return {
+    done: done,
+    total: total
+  };
+  var entries = section.entries;
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry || entry.disabled === true) continue;
+    total++;
+    if (DONE_SET.has(entry.icon)) done++;
+  }
+
+  return {
+    done: done,
+    total: total
+  };
+}
+/**
+ * Sum rule A over several section keys (skipping any that don't exist on the db).
+ * @param {object} db the HK singleton
+ * @param {string[]} keys section keys
+ * @returns {{done:number, total:number}}
+ */
+
+function countSections(db, keys) {
+  var done = 0;
+  var total = 0;
+  if (!db || !db.sections || !Array.isArray(keys)) return {
+    done: done,
+    total: total
+  };
+
+  var _iterator = _createForOfIteratorHelper(keys),
+      _step;
+
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var key = _step.value;
+      var section = db.sections[key];
+      if (!section) continue;
+      var c = countRuleA(section);
+      done += c.done;
+      total += c.total;
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+
+  return {
+    done: done,
+    total: total
+  };
+}
+/**
+ * Strip HTML tags + collapse whitespace from a section description, truncated for a subtitle.
+ * @param {string} desc
+ * @param {number} max
+ * @returns {string}
+ */
+
+function shortText(desc) {
+  var max = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 100;
+  if (!desc) return "";
+  var plain = String(desc).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  if (plain.length <= max) return plain;
+  return plain.slice(0, max).trim() + "…";
+}
+/**
+ * Escape a string for safe HTML text interpolation.
+ * @param {string} str
+ * @returns {string}
+ */
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+/***/ }),
+
 /***/ "./src/js/page-functions.js":
 /*!**********************************!*\
   !*** ./src/js/page-functions.js ***!
@@ -11686,14 +12984,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "benchmarkTimes": () => (/* binding */ benchmarkTimes)
 /* harmony export */ });
 /* harmony import */ var _LoadSaveFile_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./LoadSaveFile.js */ "./src/js/LoadSaveFile.js");
-/* harmony import */ var _img_health_mask_png__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../img/health-mask.png */ "./src/img/health-mask.png");
-/* harmony import */ var _img_health_mask_steel_png__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../img/health-mask-steel.png */ "./src/img/health-mask-steel.png");
-/* harmony import */ var _img_soul_orb_png__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../img/soul-orb.png */ "./src/img/soul-orb.png");
-/* harmony import */ var _img_notch_png__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../img/notch.png */ "./src/img/notch.png");
-/* harmony import */ var _img_notch_filled_png__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../img/notch-filled.png */ "./src/img/notch-filled.png");
-/* harmony import */ var _img_notch_overcharmed_png__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../img/notch-overcharmed.png */ "./src/img/notch-overcharmed.png");
-/* harmony import */ var _img_geo_png__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../img/geo.png */ "./src/img/geo.png");
-/* harmony import */ var _img_geo_shade_png__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../img/geo-shade.png */ "./src/img/geo-shade.png");
+/* harmony import */ var _ledger_screens_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./ledger-screens.js */ "./src/js/ledger-screens.js");
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./ledger-components.js */ "./src/js/ledger-components.js");
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
@@ -11705,53 +12997,25 @@ function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o =
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
 
-/* ------------------------ Load image files (necessary for Webpack) ---------------------------------------------------------- */
+/* ------------------------ Knight's Ledger render layer ---------------------------------------------------------- */
+
+/* The engine (HKCheckCompletion) mutates the HK singleton, then calls GenerateInnerHTML(HK).
+   We build the sidebar/bottom-nav chrome once, render every screen into #generated, populate the
+   [x/y] badges (completion rule A), and route between screens. The decrypt/completion engine is untouched. */
 
 
 
+/* -------------------------- Constants --------------------------------------------------------------------------- */
 
-
-
-
-
-
-/* ------------------------- Constants ---------------------------------------------------------------------------------------- */
-// const DATA_UNKNOWN = "Data unknown";
-
-var SYMBOL_FALSE = "<i class='icon-cancel'></i>"; // "❌ "
-
-var SYMBOL_TRUE = "<i class='icon-ok-squared'></i>"; // "✅ "
-
-var SYMBOL_PARTIAL = "<i class='icon-ok-squared partial'></i>"; // "✔ "
-
-var SYMBOL_CLOCK = "<i class='icon-clock'></i>"; // "🕑 "
-
-var SYMBOL_FILE = "<i class='icon-doc-text-inv'></i>"; // "📁"
-
-var SYMBOL_BINDING_NAIL = "<i class='reznoricon-binding-nail'></i>"; // Nail Binding
-
-var SYMBOL_BINDING_SHELL = "<i class='reznoricon-binding-shell'></i>"; // Shell Binding
-
-var SYMBOL_BINDING_CHARMS = "<i class='reznoricon-binding-charms'></i>"; // Charm Binding
-
-var SYMBOL_BINDING_SOUL = "<i class='reznoricon-binding-soul'></i>"; // Soul Binding
-
-var SYMBOL_BINDING_ALL = "<i class='reznoricon-binding-all'></i>"; // All Bindings
-
-var SYMBOL_ATTUNED = "<i class='reznoricon-attuned'></i>"; // Attuned
-
-var SYMBOL_ASCENDED = "<i class='reznoricon-ascended'></i>"; // Ascended
-
-var SYMBOL_RADIANT = "<i class='reznoricon-radiant'></i>"; // Radiant
-
-var SYMBOL_EMPTY = "<span class='padding-left'></span>"; // No symbol
-
-var FLEUR_DIVIDE = "<div class='horizontal-line'></div>";
-var WIKI_LINK = "https://hollowknight.fandom.com/wiki/";
 var ROOT = document.documentElement;
 var SCROLL_BUTTON = document.querySelector(".scroll-up-button");
-/* -------------------------- Variables --------------------------------------------------------------------------------------- */
+var SYMBOL_FILE = "<span class='material-symbols-outlined text-sm align-middle'>description</span>";
+/* Active sidebar/bottom nav-link styling (literal classes so Tailwind keeps them) */
 
+var NAV_ACTIVE_CLASSES = ["bg-surface-container-high", "text-on-surface"];
+/* -------------------------- State --------------------------------------------------------------------------------- */
+
+var chromeBuilt = false;
 var benchmarkTimes = {
   LoadSaveFile: {
     name: "LoadSaveFile()",
@@ -11816,7 +13080,9 @@ function HideElement(element) {
 }
 
 function TogglePageScrollElement(root, element, ratio) {
+  if (!element) return;
   /* Maximum number of pixels that can be scrolled by the user */
+
   var scrollTotal = root.scrollHeight - root.clientHeight;
 
   if (root.scrollTop / scrollTotal > ratio) {
@@ -11827,616 +13093,28 @@ function TogglePageScrollElement(root, element, ratio) {
     HideElement(element);
   }
 }
-/* ################################### Optimized Functions ########################################################################## */
+/* ################################### Chrome + Router ########################################################## */
 
+/**
+ * Builds the sidebar nav list and mobile bottom nav from the SCREENS registry. Runs once.
+ */
 
-function GenerateInnerHTML(db) {
-  // start benchmarking
-  benchmarkTimes.GenerateInnerHTML.timeStart = performance.now();
-  var sections = db.sections;
-  /* console.log(sections); */
 
-  var entries = {};
-  var obj = {
-    icon: "",
-    iconClass: "",
-    textPrefix: "",
-    textSuffix: "",
-    wiki: "",
-    div: "<div class='single-entry'>",
-    b: ["<b>", "</b>"],
-    p: "<span class='p-left-small'></span>",
-    span: ["", ""],
-    spoiler: ["", ""],
-    spoilerAfter: ""
-  };
-  var finalHTMLFill = "";
-  var textFill = "";
-  var Img = "";
-  var maskNormal = "<img src='".concat(_img_health_mask_png__WEBPACK_IMPORTED_MODULE_1__, "' class='health-mask' alt='health mask image' title='Health Mask'>");
-  var maskSteel = "<img src='".concat(_img_health_mask_steel_png__WEBPACK_IMPORTED_MODULE_2__, "' class='health-mask' alt='steel health mask image' title='Steel Health Mask'>");
-  var soulNormal = "<img src='".concat(_img_soul_orb_png__WEBPACK_IMPORTED_MODULE_3__, "' class='soul-orb' alt='soul orb image' title='Single Soul Orb (one spell cast)'>");
-  var notchNormalImage = "<img src='".concat(_img_notch_png__WEBPACK_IMPORTED_MODULE_4__, "' class='notch' alt='notch image' title='Charm Notch (Free)'>");
-  var notchFilledImage = "<img src='".concat(_img_notch_filled_png__WEBPACK_IMPORTED_MODULE_5__, "' class='notch' alt='notch image' title='Charm Notch (Used)'>");
-  var notchOvercharmedImage = "<img src='".concat(_img_notch_overcharmed_png__WEBPACK_IMPORTED_MODULE_6__, "' class='notch' alt='notch image' title='Charm Notch (Overcharmed)'>");
-  var geoNormalImage = "<img src='".concat(_img_geo_png__WEBPACK_IMPORTED_MODULE_7__, "' class='geo-symbol' alt='geo symbol image' title='Geo'>");
-  var geoShadeImage = "<img src='".concat(_img_geo_shade_png__WEBPACK_IMPORTED_MODULE_8__, "' class='geo-symbol' alt='shade geo symbol image' title='Shade Geo'>");
-  var div = "<div class='single-entry'>";
-  var divFlex = "<div class='flex-container align-center'>";
-  /* ############################## create all main entries ########################################################################## */
+function BuildChrome() {
+  var navList = document.getElementById("ledger-nav-list");
+  var bottomNav = document.getElementById("ledger-bottom-nav");
+  if (!navList || !bottomNav) return;
+  var side = "";
+  var bottom = "";
 
-  for (var section in sections) {
-    textFill = "";
-    /* ############################# Tab Switch buttons and Large Section <div>s for switching ############################## */
-
-    /* Important: Ending Tab </div>s are at "End the Tab divs" */
-
-    switch (section) {
-      /* Main % */
-      case "bosses":
-        textFill += ["<div class=\"tab-switch-buttons\">", "<button id=\"button-switch-all\" name=\"all\" class=\"button tab-switch\" type=\"button\">All</button>", "<button id=\"button-switch-main\" name=\"main\" class=\"button tab-switch\" type=\"button\">Main %</button>", "<button id=\"button-switch-essentials\" name=\"essentials\" class=\"button tab-switch\" type=\"button\">Essentials %</button>", "<button id=\"button-switch-journal\" name=\"journal\" class=\"button tab-switch\" type=\"button\">Journal</button>", "<button id=\"button-switch-collectibles\" name=\"collectibles\" class=\"button tab-switch\" type=\"button\">Collectibles</button>", "<button id=\"button-switch-geocaches\" name=\"geocaches\" class=\"button tab-switch\" type=\"button\">Geo Caches</button>", "<button id=\"button-switch-secrets\" name=\"secrets\" class=\"button tab-switch\" type=\"button\">Secrets</button>", "<button id=\"button-switch-godhome\" name=\"godhome\" class=\"button tab-switch\" type=\"button\">Godmaster</button>", "<button id=\"button-switch-statistics\" name=\"statistics\" class=\"button tab-switch\" type=\"button\">Statistics</button>", "</div>"].join("\n");
-        textFill += LargeSectionStart("tab-main", "Main", db);
-        break;
-
-      /* Essentials % */
-
-      case "essentialsCollectibles":
-        textFill += LargeSectionStart("tab-essentials", "Essentials", db);
-        break;
-
-      /* Journal */
-
-      case "huntersJournal":
-        textFill += LargeSectionStart("tab-journal", "Journal", db);
-        break;
-
-      /* Collectibles */
-
-      case "charmNotches":
-        textFill += LargeSectionStart("tab-collectibles", "Collectibles", db);
-        break;
-
-      /* Geo Caches */
-
-      case "geoChests":
-        textFill += LargeSectionStart("tab-geocaches", "Geo Caches", db);
-        break;
-
-      /* Secrets */
-
-      case "worldInteractions":
-        textFill += LargeSectionStart("tab-secrets", "Secrets", db);
-        break;
-
-      /* Statistics */
-
-      case "statistics":
-        textFill += LargeSectionStart("tab-statistics", "Statistics", db);
-        break;
-
-      /* Godmaster */
-
-      case "godhomeStatistics":
-        textFill += LargeSectionStart("tab-godhome", "Godmaster", db);
-        break;
-    }
-
-    entries = sections[section].entries;
-    /* ####################### Section div id start ########################## */
-
-    /* starts a new <div> with the current section id */
-
-    textFill += SectionStart(sections[section]);
-    /* creates a <h2> tag for the current section and fills with current%/max%
-    If the save file was not analyzed, then fill only max% on blue background */
-
-    if (db.saveAnalyzed === true) {
-      textFill += CompletionFill(sections[section]);
-    } else {
-      textFill += CompletionFillNoSave(sections[section]);
-    }
-    /* ######################## Different behaviour depending on the section ###################################################### */
-
-
-    switch (section) {
-      /* ############### Game Status (intro) ################ */
-      case "intro":
-        /* ############## Create each single entry (intro) ############### */
-        for (var entry in entries) {
-          obj.b = ["", ""];
-          obj.p = "<span class='p-left-small'></span>";
-          obj.span = ["<b>", "</b>"];
-          obj.div = div;
-          /* -------- Icons (next to each entry) --------- */
-
-          if (entries[entry].hasOwnProperty("icon")) {
-            switch (entries[entry].icon) {
-              case "clock":
-                obj.icon = SYMBOL_CLOCK;
-                break;
-
-              case "green":
-                obj.icon = SYMBOL_TRUE;
-                break;
-
-              case "partial":
-                obj.icon = SYMBOL_PARTIAL;
-                break;
-
-              case "revealed":
-                obj.icon = SYMBOL_EMPTY;
-                break;
-
-              case "red":
-                obj.icon = SYMBOL_FALSE;
-                break;
-
-              default:
-                obj.icon = SYMBOL_EMPTY;
-            }
-          } else {
-            obj.icon = SYMBOL_FALSE;
-          }
-
-          obj.textPrefix = entries[entry].name;
-          obj.textSuffix = entries[entry].spoiler;
-          obj.spoilerAfter = "";
-          /* Different text and images for each entry in the "Game Status" (intro) section */
-
-          switch (entry) {
-            case "gameCompletion":
-              obj.textSuffix = "".concat(obj.textSuffix, " %");
-              obj.spoilerAfter = "</b> ".concat(entries[entry].spoilerAfter);
-              obj.span[1] = "";
-              break;
-
-            case "gameCompletionExtended":
-              obj.spoilerAfter = "</b> ".concat(entries[entry].spoilerAfter);
-              obj.span[1] = "";
-              break;
-
-            case "health":
-              /* ----------------- Horizontal Line after save version ---------------- */
-              textFill += FLEUR_DIVIDE;
-              obj.div = divFlex;
-              obj.span = ["", ""];
-              entries[entry].permadeathMode ? Img = maskSteel : Img = maskNormal;
-
-              for (var i = 0, total = entries[entry].amountTotal; i < total; i++) {
-                obj.textSuffix += Img;
-              }
-
-              obj.textSuffix += "".concat(obj.p, "<sup>(").concat(entries[entry].amountTotal, ")</sup>");
-              obj.p = "";
-              break;
-
-            case "soul":
-              obj.div = divFlex;
-              obj.span = ["", ""];
-              Img = soulNormal;
-
-              for (var _i = 0, _total = Math.round(entries[entry].amountTotal / 33); _i < _total; _i++) {
-                obj.textSuffix += Img;
-              }
-
-              obj.textSuffix += "".concat(obj.p, "<sup>(").concat(Math.round(entries[entry].amountTotal / 33), ")</sup>");
-              obj.p = "";
-              break;
-
-            case "notches":
-              obj.div = divFlex;
-              obj.span = ["", ""];
-              /* First, check filled (used) notches and fill them (skips if no filled notches) */
-
-              if (entries[entry].amountFilled > 0) {
-                for (var _i2 = 0, _total2 = entries[entry].amountFilled; _i2 < _total2; _i2++) {
-                  obj.textSuffix += notchFilledImage;
-                }
-              }
-              /* Second, check overcharmed notches and fill them (skips if player is not overcharmed) */
-
-
-              if (entries[entry].amountOvercharmed > 0) {
-                for (var _i3 = 0, _total3 = entries[entry].amountOvercharmed; _i3 < _total3; _i3++) {
-                  obj.textSuffix += notchOvercharmedImage;
-                }
-              }
-              /* Last, fill all unused notches */
-
-
-              if (entries[entry].amountUnused > 0) {
-                for (var _i4 = 0, _total4 = entries[entry].amountUnused; _i4 < _total4; _i4++) {
-                  obj.textSuffix += notchNormalImage;
-                }
-              }
-
-              obj.textSuffix += "".concat(obj.p, "<sup>(").concat(entries[entry].amountTotal, ")</sup>");
-              break;
-
-            case "geo":
-              obj.div = divFlex;
-              obj.span = ["", ""];
-              obj.textSuffix += "".concat(geoNormalImage, "<b>").concat(entries[entry].amount, "</b>"); // Show Shade Geo value and image only if Shade has at least 1 Geo on it
-
-              if (entries[entry].amountShade > 0) obj.textSuffix += "".concat(obj.p, "+").concat(geoShadeImage, "<b>").concat(entries[entry].amountShade, "</b>"); // Show also total Geo (Geo + Shade Geo) if player has at least 1 geo alongside the shade geo
-
-              if (entries[entry].amount > 0 && entries[entry].amountShade > 0) {
-                obj.textSuffix += "".concat(obj.p, "=").concat(obj.p, "<b>").concat(entries[entry].amountTotal, "</b>");
-              }
-
-              obj.p = "";
-              break;
-
-            default:
-          }
-
-          textFill += SingleEntryFill(obj);
-        }
-
-        break;
-
-      /* #################### Hints (hints) #################### */
-
-      case "hints":
-        obj.b = ["", ""];
-        obj.span = ["<span class='hint'>", "</span>"];
-        obj.icon = "";
-        obj.textPrefix = "";
-        obj.div = div;
-        /* display only one (current) hint */
-
-        obj.textSuffix = entries[sections[section].current].spoiler;
-        textFill += SingleEntryFill(obj);
-        break;
-
-      /* ######################### Create all other sections ################################################################## */
-
-      default:
-        /* ###################### Create section descriptions under each H2 title ##################### */
-        if (sections[section].hasOwnProperty("description")) {
-          textFill += SectionDescription(sections[section]);
-        }
-        /* ###################### Create each single entry (from all other sections) ##################### */
-
-
-        for (var _entry in entries) {
-          /* obj.p = "<span class='p-left-small'></span>"; */
-          obj.p = "";
-          obj.span = ["<span class='spoiler-span blurred'>", "</span>"];
-          obj.spoiler = ["<span class='spoiler-text'>", "</span>"];
-          obj.div = div;
-          obj.textPrefix = entries[_entry].name;
-          obj.textSuffix = "\u2014 ".concat(entries[_entry].spoiler);
-          obj.wiki = entries[_entry].wiki;
-          /* -------- Icons (next to each entry) --------- */
-
-          if (entries[_entry].hasOwnProperty("icon")) {
-            switch (entries[_entry].icon) {
-              case "clock":
-                obj.icon = SYMBOL_CLOCK;
-                break;
-
-              case "green":
-                obj.icon = SYMBOL_TRUE;
-                /* -------- Prevents hiding as spoiler when a player has already completed the entry --------- */
-
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "partial":
-                obj.icon = SYMBOL_PARTIAL;
-                break;
-
-              case "revealed":
-                obj.icon = SYMBOL_EMPTY;
-                /* -------- Prevents textSuffix blurring when a player has already discovered the entry --------- */
-
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "partialJournal":
-                obj.icon = SYMBOL_PARTIAL;
-                /* -------- Prevents textSuffix blurring when a player has already discovered the entry --------- */
-
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "bindingNail":
-                obj.icon = SYMBOL_BINDING_NAIL;
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "bindingShell":
-                obj.icon = SYMBOL_BINDING_SHELL;
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "bindingCharms":
-                obj.icon = SYMBOL_BINDING_CHARMS;
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "bindingSoul":
-                obj.icon = SYMBOL_BINDING_SOUL;
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "bindingAll":
-                obj.icon = SYMBOL_BINDING_ALL;
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "attuned":
-                obj.icon = SYMBOL_ATTUNED;
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "ascended":
-                obj.icon = SYMBOL_ASCENDED;
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "radiant":
-                obj.icon = SYMBOL_RADIANT;
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "red":
-                obj.icon = SYMBOL_FALSE;
-                break;
-
-              default:
-                obj.icon = SYMBOL_EMPTY;
-            }
-          } else {
-            if (section === "statistics") {
-              obj.icon = SYMBOL_EMPTY;
-            } else {
-              obj.icon = SYMBOL_FALSE;
-            }
-          }
-          /* assign the appropriate spoiler class name depending on the completion check (for blurring names) */
-
-
-          if (entries[_entry].hasOwnProperty("icon")) {
-            switch (entries[_entry].icon) {
-              case "red":
-              case "none":
-                obj.iconClass = " spoiler-red blurred";
-                break;
-
-              default:
-                /* -------- Prevents TextPrefix blurring when a player has already discovered the entry --------- */
-                obj.iconClass = "";
-            }
-          } else {
-            obj.iconClass = "";
-          }
-
-          obj.b = ["<a class=\"wiki".concat(obj.iconClass, "\" href=\"").concat(WIKI_LINK).concat(obj.wiki, "\" target=\"_blank\">"), "</a>"];
-
-          if (entries[_entry].hasOwnProperty("amount")) {
-            if (entries[_entry].hasOwnProperty("disabled")) {
-              if (entries[_entry].disabled !== true) {
-                obj.textPrefix += ": ".concat(entries[_entry].amount);
-              }
-            } else {
-              obj.textPrefix += ": ".concat(entries[_entry].amount);
-            }
-          }
-
-          if (entries[_entry].hasOwnProperty("amountTotal")) {
-            obj.textPrefix += " / ".concat(entries[_entry].amountTotal);
-          }
-
-          if (entries[_entry].hasOwnProperty("id")) {
-            switch (entries[_entry].id) {
-              case "geoRocks":
-              case "itemsDiscovered":
-                obj.textPrefix += ": ".concat(entries[_entry].notActivated, " | ").concat(entries[_entry].activated, " | ").concat(entries[_entry].discoveredTotal);
-                break;
-
-              default:
-            }
-          }
-
-          if (entries[_entry].hasOwnProperty("disabled")) {
-            if (entries[_entry].disabled === true) {
-              obj.textPrefix = "<del>".concat(obj.textPrefix, "</del>");
-            }
-          }
-
-          var isEntryCompleted = false;
-
-          if (entries[_entry].disabled === true) {
-            isEntryCompleted = true;
-          } else if (section === "statistics" && !entries[_entry].hasOwnProperty("max")) {
-            // Pure statistics should never be hidden
-            isEntryCompleted = false;
-          } else {
-            var iconName = entries[_entry].icon;
-            isEntryCompleted = iconName === "green" || iconName === "bindingNail" || iconName === "bindingShell" || iconName === "bindingCharms" || iconName === "bindingSoul" || iconName === "bindingAll" || iconName === "attuned" || iconName === "ascended" || iconName === "radiant" || iconName === "none";
-          }
-
-          var completedClass = isEntryCompleted ? " completed-item" : " incomplete-item";
-          obj.div = "<div class='single-entry".concat(completedClass, "'>");
-          /* textFill += SingleEntryFill(section, entries[entry]); */
-
-          textFill += SingleEntryFill(obj);
-        }
-
-      /* end for (let entry in entries) */
-    }
-    /* end switch (section) - central */
-
-    /* ############# Cumulate all section texts into one variable for final HTML filling. End section div tag ############### */
-
-
-    finalHTMLFill += "".concat(textFill, "\n</div>\n\n");
-    /* ################## End the Tab divs (must be after section ending div) ################# */
-
-    switch (section) {
-      /* ending the tabs */
-      case "godmaster": // Main %
-
-      case "achievementsBosses": // Essentials %
-
-      case "huntersJournalOptional": // Journal
-
-      case "items": // Collectibles
-
-      case "geoRocks": // Geo Caches
-
-      case "corniferNotes": // Secrets
-
-      case "statistics": // Statistics
-
-      case "hallOfGods":
-        // Godmaster
-        finalHTMLFill += "</div>";
-        break;
-    }
-  }
-  /* end for (let section in sections) */
-
-  /* console.groupCollapsed("finalHTMLFill");
-  console.log(finalHTMLFill);
-  console.groupEnd(); */
-
-  /* ################################## Horizontal line ############################################################################# */
-
-
-  finalHTMLFill += FLEUR_DIVIDE;
-  /* --------------- Final single HTML access and fill here ------------------ */
-
-  document.getElementById("generated").innerHTML = finalHTMLFill;
-  /* make tab switch buttons working (on click) - must run after inner HTML generation is finished */
-
-  document.querySelectorAll(".tab-switch").forEach(function (button) {
-    button.addEventListener("click", function (e) {
-      PageSwitchTab(e.target.name);
-    });
-  });
-  /* Check local storage first, and set the last selected Tab on the page (remembers last clicked tab) */
-
-  if (StorageAvailable('localStorage')) {
-    if (localStorage.getItem("hkTabActive")) {
-      PageSwitchTab(localStorage.getItem("hkTabActive"));
-    } else {
-      PageSwitchTab("main");
-    }
-  } // finish benchmarking
-
-
-  benchmarkTimes.GenerateInnerHTML.timeEnd = performance.now();
-}
-
-function SectionDescription(section) {
-  return "<p class=\"section-description\">".concat(section.description, "</p>");
-}
-
-function IsSectionCompleted(section) {
-  if (section.id === "hk-intro" || section.id === "hk-hints" || section.id === "hk-statistics") {
-    return false;
-  }
-
-  var entries = section.entries;
-
-  for (var entry in entries) {
-    if (entries[entry].disabled === true) {
-      continue;
-    }
-
-    var iconName = entries[entry].icon;
-    var isCompleted = iconName === "green" || iconName === "bindingNail" || iconName === "bindingShell" || iconName === "bindingCharms" || iconName === "bindingSoul" || iconName === "bindingAll" || iconName === "attuned" || iconName === "ascended" || iconName === "radiant" || iconName === "none";
-
-    if (!isCompleted) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function SectionStart(section) {
-  var extraClass = IsSectionCompleted(section) ? "completed-section" : "";
-  var classes = ["section-container"];
-  if (extraClass) classes.push(extraClass);
-
-  if (StorageAvailable('localStorage')) {
-    if (localStorage.getItem("collapsed-".concat(section.id)) === "true") {
-      classes.push("collapsed");
-    }
-  }
-
-  var cl = " class=\"".concat(classes.join(" "), "\"");
-  return "<div id=\"".concat(section.id, "\"").concat(cl, ">\n");
-}
-
-var TAB_SECTIONS = {
-  "tab-main": ["bosses", "charms", "equipment", "nailUpgrades", "nailArts", "spells", "maskShards", "vesselFragments", "dreamNail", "warriorDreams", "dreamers", "colosseum", "grimmTroupe", "lifeblood", "godmaster"],
-  "tab-essentials": ["essentialsCollectibles", "essentialsStagStations", "essentialsWorldInteractions", "essentialsBosses", "achievementsCollectibles", "achievementsMaps", "achievementsWorldInteractions", "achievementsBosses"],
-  "tab-journal": ["huntersJournal", "huntersJournalOptional"],
-  "tab-collectibles": ["charmNotches", "grubs", "whisperingRoots", "relicsWanderersJournal", "relicsHallownestSeal", "relicsKingsIdol", "relicsArcaneEgg", "rancidEggs", "items"],
-  "tab-geocaches": ["geoChests", "geoRocks"],
-  "tab-secrets": ["worldInteractions", "secretRooms", "corniferNotes"],
-  "tab-statistics": ["statistics"],
-  "tab-godhome": ["godhomeStatistics", "pantheonOfTheMaster", "pantheonOfTheArtist", "pantheonOfTheSage", "pantheonOfTheKnight", "pantheonOfHallownest", "hallOfGods"]
-};
-
-function GetTabCompletionPercent(tabId, db) {
-  if (!db.saveAnalyzed) {
-    return 0;
-  }
-
-  if (tabId === "tab-main") {
-    return db.sections.intro.percent;
-  }
-
-  var sections = TAB_SECTIONS[tabId];
-  if (!sections) return 0;
-  var completed = 0;
-  var total = 0;
-
-  var _iterator = _createForOfIteratorHelper(sections),
+  var _iterator = _createForOfIteratorHelper(_ledger_screens_js__WEBPACK_IMPORTED_MODULE_1__.SCREENS),
       _step;
 
   try {
     for (_iterator.s(); !(_step = _iterator.n()).done;) {
-      var s = _step.value;
-      var section = db.sections[s];
-      if (!section) continue;
-      var entries = section.entries;
-
-      for (var entry in entries) {
-        if (entries[entry].disabled === true) {
-          continue;
-        }
-
-        total++;
-        var iconName = entries[entry].icon;
-        var isCompleted = iconName === "green" || iconName === "bindingNail" || iconName === "bindingShell" || iconName === "bindingCharms" || iconName === "bindingSoul" || iconName === "bindingAll" || iconName === "attuned" || iconName === "ascended" || iconName === "radiant" || iconName === "none";
-
-        if (isCompleted) {
-          completed++;
-        }
-      }
+      var screen = _step.value;
+      side += ["<li><a href=\"#\" data-screen=\"".concat(screen.id, "\" class=\"ledger-nav-link flex items-center gap-md px-md py-sm rounded-lg text-lichen-blue hover:bg-surface-container-high hover:text-on-surface transition-colors group\">"), "<span class=\"material-symbols-outlined group-hover:text-secondary-container transition-colors\" style=\"font-variation-settings:'FILL' 0;\">".concat(screen.icon, "</span>"), "<span class=\"font-body-bold\">".concat(screen.label, "</span>"), "<span class=\"ml-auto\" data-badge=\"".concat(screen.id, "\"></span>"), "</a></li>"].join("");
+      bottom += ["<a href=\"#\" data-screen=\"".concat(screen.id, "\" class=\"ledger-nav-link flex flex-col items-center justify-center gap-1 px-sm py-xs rounded-xl text-lichen-blue transition-colors shrink-0 min-w-[64px]\">"), "<span class=\"material-symbols-outlined text-xl\" style=\"font-variation-settings:'FILL' 0;\">".concat(screen.icon, "</span>"), "<span class=\"font-label-sm text-label-sm-mobile whitespace-nowrap\">".concat(screen.label, "</span>"), "</a>"].join("");
     }
   } catch (err) {
     _iterator.e(err);
@@ -12444,183 +13122,160 @@ function GetTabCompletionPercent(tabId, db) {
     _iterator.f();
   }
 
-  if (total === 0) return 0;
-  return Math.round(completed / total * 100);
+  navList.innerHTML = side;
+  bottomNav.innerHTML = bottom;
+  navList.addEventListener("click", NavClickHandler);
+  bottomNav.addEventListener("click", NavClickHandler);
+  chromeBuilt = true;
 }
 
-function LargeSectionStart(tabId, title, db) {
-  var classes = ["large-section"];
-
-  if (StorageAvailable('localStorage')) {
-    if (localStorage.getItem("collapsed-".concat(tabId)) === "true") {
-      classes.push("collapsed");
-    }
-  }
-
-  var pct = GetTabCompletionPercent(tabId, db);
-  return "<div id=\"".concat(tabId, "\" class=\"").concat(classes.join(" "), "\"><h1 class=\"tab-header\">").concat(title, " <div class=\"percent-box\" style=\"margin-left:1.5rem;\">").concat(pct, "%</div></h1>\n");
+function NavClickHandler(e) {
+  var link = e.target.closest(".ledger-nav-link");
+  if (!link) return;
+  e.preventDefault();
+  ShowScreen(link.getAttribute("data-screen"));
 }
 /**
- * Replaces the h2 titles with max percent values as read from the database
+ * Highlights the active nav-link (both sidebar and bottom nav share the .ledger-nav-link class).
  */
 
 
-function CompletionFillNoSave(section) {
-  var id = "";
-  var h2 = "";
-  var h2id = "";
-  var percentBox = ""; // Percent Box
+function SetActiveNav(id) {
+  document.querySelectorAll(".ledger-nav-link").forEach(function (link) {
+    var isActive = link.getAttribute("data-screen") === id;
 
-  var symbol = "";
-  var fullString = "";
-  id = section.id;
-  h2 = section.h2;
-  h2id = "h2-" + section.id;
-  /* Display % only when showing Main Game Completion % sections */
+    var _iterator2 = _createForOfIteratorHelper(NAV_ACTIVE_CLASSES),
+        _step2;
 
-  switch (section.id) {
-    case "hk-intro":
-      symbol = "%";
-      break;
+    try {
+      for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+        var cls = _step2.value;
+        link.classList.toggle(cls, isActive);
+      }
+    } catch (err) {
+      _iterator2.e(err);
+    } finally {
+      _iterator2.f();
+    }
 
-    default:
-      symbol = "";
-  }
-
-  percentBox = "<div class='percent-box'>".concat(id === "hk-intro" ? "0%" : "0/".concat(section.maxPercent).concat(symbol), "</div>");
-  if (!section.hasOwnProperty("maxPercent")) percentBox = "";
-  fullString += "<h2 id='".concat(h2id, "'>").concat(h2).concat(percentBox, "</h2>"); // ----------------- add True Completion h2 title ---------------- //
-
-  switch (id) {
-    case "hk-intro":
-      fullString += "<h2 id='hk-true-completion'>True Completion<div class='percent-box'>0.00%</div></h2>";
-      break;
-
-    default:
-  }
-
-  return fullString;
+    link.classList.toggle("text-lichen-blue", !isActive);
+  });
 }
 /**
- * Replaces the h2 titles with a current percent/max percent values as read from the database
+ * Shows a single screen, hides the rest, updates the active nav-link, remembers the choice.
+ * @param {string} id screen id (data-screen)
  */
 
 
-function CompletionFill(section) {
-  var h2 = section.h2;
-  var h2id = "<h2 id=\"h2-".concat(section.id, "\">");
-  var cl = "";
-  var clGreen = "box-green";
-  var clRed = "box-red";
-  var cp = 0; // current Percent
+function ShowScreen(id) {
+  var screens = document.querySelectorAll(".ledger-screen");
+  var matched = false;
+  screens.forEach(function (s) {
+    var isActive = s.getAttribute("data-screen") === id;
+    s.classList.toggle("hidden", !isActive);
+    if (isActive) matched = true;
+  });
+  /* Fall back to dashboard if the requested screen doesn't exist */
 
-  var midP = 0; // middle Percent
-
-  var mp = 0; // max Percent
-
-  var trueCompletionCurrent = 0;
-  var trueCompletionTotal = 0;
-  var trueCompletionPercent = 0; // True Completion %
-
-  var symbol = "";
-  var percentBox = "";
-  var fullString = "";
-  section.hasOwnProperty("percent") ? cp = section.percent : cp = 0;
-  section.hasOwnProperty("midPercent") ? midP = section.midPercent : midP = 0; // Don't use percent-box for Essentials, Achievements, Statistics etc.
-
-  if (!section.hasOwnProperty("maxPercent")) {
-    percentBox = "";
-  } // otherwise use percent-box with values cp/mp%
-  else {
-    mp = section.maxPercent; // Shards and Fragments correct calculations
-
-    if (section.id === "hk-maskshards") {
-      var perc = section.percent;
-      perc % 4 ? cp = Math.floor(perc / 4) : cp = perc / 4;
-    } else if (section.id === "hk-vesselfragments") {
-      var _perc = section.percent;
-      _perc % 3 ? cp = Math.floor(_perc / 3) : cp = _perc / 3;
-    } // switches the box to red when a section (h2) is 0
-
-
-    if (cp === 0) {
-      cl = " ".concat(clRed);
-    } // switches the box to green when a section (h2) is completed
-    else if (cp === mp) {
-      cl = " ".concat(clGreen);
-    } // default is blue (partially completed and starting value)
-    else cl = ""; // Select which symbol or text to display (/ or something else depending on the section)
-
-
-    switch (section.id) {
-      // needed for Game Status to show percentage properly (adds a slash for all boxes except the Game Status one)
-      case "hk-intro":
-        break;
-      // Hunter's Journal entries, Completed/Encountered of Total, e.g. 23/134 of 146
-
-      case "hk-journal":
-        cp = "".concat(cp, "/").concat(midP, " of ");
-        break;
-
-      default:
-        cp += "/";
-    }
-    /* Display % only when showing Main Game Completion % sections */
-
-
-    switch (section.id) {
-      case "hk-intro":
-        // True Completion % reading and calculation for percent-box and box colors
-        trueCompletionCurrent = section.extendedCompletionDone;
-        trueCompletionTotal = section.extendedCompletionTotal;
-        trueCompletionPercent = trueCompletionCurrent / trueCompletionTotal * 100;
-        symbol = "%";
-        break;
-
-      default:
-        symbol = "";
-    }
-
-    percentBox = "<div class='percent-box".concat(cl, "'>").concat(section.id === "hk-intro" ? cp : "".concat(cp).concat(section.maxPercent)).concat(symbol, "</div>");
+  if (!matched && id !== "dashboard") {
+    ShowScreen("dashboard");
+    return;
   }
 
-  fullString += "\t".concat(h2id).concat(h2).concat(percentBox, "</h2>\n"); // ----------------- add True Completion h2 title ---------------- //
+  SetActiveNav(id);
 
-  switch (section.id) {
-    case "hk-intro":
-      // switches the box to red when True Completion is 0
-      if (trueCompletionCurrent === 0) {
-        cl = " ".concat(clRed);
-      } // switches the box to green when True Completion is 100.00%
-      else if (trueCompletionCurrent === trueCompletionTotal) {
-        cl = " ".concat(clGreen);
-      } // default is blue (partially completed and starting value)
-      else cl = "";
-
-      fullString += "<h2 id='hk-true-completion'>\n      True Completion<div class='percent-box".concat(cl, "'>").concat(trueCompletionPercent.toFixed(2)).concat(symbol, "</div>\n      </h2>");
-      break;
-
-    default:
+  if (StorageAvailable("localStorage")) {
+    localStorage.setItem("hkLedgerScreen", id);
   }
 
-  return fullString;
-}
-/* function SingleEntryFill(section, entry) { */
-
-
-function SingleEntryFill(obj) {
-  return [obj.div, obj.icon, "".concat(obj.b[0]).concat(obj.textPrefix).concat(obj.b[1]), obj.span[0], obj.p, obj.spoiler[0], "".concat(obj.textSuffix).concat(obj.spoilerAfter), obj.spoiler[1], obj.span[1], "</div>\n"].join("");
+  if (ROOT && ROOT.scrollTo) {
+    ROOT.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }
 }
 /**
- * Adds HTML string to an element with a given ID.
- * @param {object} divId object containing div ID of the HTML element to append to
- * @param {string} content HTML contents to append
+ * Fills every sidebar [data-badge] slot with a completion badge computed from the DB (rule A).
+ */
+
+
+function UpdateBadges(db) {
+  var _iterator3 = _createForOfIteratorHelper(_ledger_screens_js__WEBPACK_IMPORTED_MODULE_1__.SCREENS),
+      _step3;
+
+  try {
+    for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+      var screen = _step3.value;
+      var slot = document.querySelector("[data-badge=\"".concat(screen.id, "\"]"));
+      if (!slot) continue;
+      /* Dashboard + Statistics carry no count badge */
+
+      if (screen.id === "dashboard" || screen.id === "statistics") {
+        slot.innerHTML = "";
+        continue;
+      }
+
+      var counts = (0,_ledger_screens_js__WEBPACK_IMPORTED_MODULE_1__.screenCount)(screen, db);
+      slot.innerHTML = (0,_ledger_components_js__WEBPACK_IMPORTED_MODULE_2__.navBadge)(counts.done, counts.total);
+    }
+  } catch (err) {
+    _iterator3.e(err);
+  } finally {
+    _iterator3.f();
+  }
+}
+/* ################################### Main render entry point ########################################################## */
+
+/**
+ * Builds the chrome (once), renders all screens into #generated, updates badges, and routes
+ * to the remembered (or default) screen. Called by the engine after every save analysis and at load.
+ * @param {object} db the HK singleton
+ */
+
+
+function GenerateInnerHTML(db) {
+  benchmarkTimes.GenerateInnerHTML.timeStart = performance.now();
+  if (!chromeBuilt) BuildChrome();
+  var target = document.getElementById("generated");
+
+  if (target) {
+    target.innerHTML = (0,_ledger_screens_js__WEBPACK_IMPORTED_MODULE_1__.renderAllScreens)(db);
+  }
+
+  UpdateBadges(db);
+  /* Make category cards (Dashboard bento) clickable to their screen. Bind once. */
+
+  if (target && !target.dataset.navBound) {
+    target.addEventListener("click", function (e) {
+      var card = e.target.closest("[data-screen-link]");
+      if (card) ShowScreen(card.getAttribute("data-screen-link"));
+    });
+    target.dataset.navBound = "1";
+  }
+  /* Restore the last viewed screen (default: dashboard) */
+
+
+  var active = "dashboard";
+
+  if (StorageAvailable("localStorage") && localStorage.getItem("hkLedgerScreen")) {
+    active = localStorage.getItem("hkLedgerScreen");
+  }
+
+  ShowScreen(active);
+  benchmarkTimes.GenerateInnerHTML.timeEnd = performance.now();
+}
+/**
+ * Legacy helper kept for API compatibility (imported by HKCheckCompletion.js). Appends HTML to an element.
  */
 
 
 function AppendHTML(divId, content) {
-  document.getElementById(divId.id).innerHTML += "\n" + content;
+  var el = document.getElementById(divId.id);
+  if (el) el.innerHTML += "\n" + content;
 }
+/* ################################### Controls (save mode, copy, filename) ########################################### */
+
 
 function ToggleSaveModeSwitch() {
   var mode = this.value;
@@ -12630,24 +13285,18 @@ function ToggleSaveModeSwitch() {
 
   if (mode === "modeText") {
     this.value = "modeFile";
-    chooseFileButtonLabel.classList.remove("hidden");
-    analyzeTextButton.classList.add("hidden");
-    saveTextArea.classList.add("hidden");
-    /* alert(this.value); */
+    if (chooseFileButtonLabel) chooseFileButtonLabel.classList.remove("hidden");
+    if (analyzeTextButton) analyzeTextButton.classList.add("hidden");
+    if (saveTextArea) saveTextArea.classList.add("hidden");
   } else {
     this.value = "modeText";
-    chooseFileButtonLabel.classList.add("hidden");
-    analyzeTextButton.classList.remove("hidden");
-    saveTextArea.classList.remove("hidden");
-    /* Warning! focus() somehow makes the textarea text offset to the left */
-
-    /* saveTextArea.focus(); */
-
-    /* alert(this.value); */
+    if (chooseFileButtonLabel) chooseFileButtonLabel.classList.add("hidden");
+    if (analyzeTextButton) analyzeTextButton.classList.remove("hidden");
+    if (saveTextArea) saveTextArea.classList.remove("hidden");
   }
 }
 /**
- * Toggles display of "hk-hints". On click with no parameters or on demand when called with a parameter
+ * Toggles display of "#hk-hints". Guarded so it no-ops if the current screen has no hints element.
  * @param {string} param "hide", "show" or none (optional)
  */
 
@@ -12655,53 +13304,39 @@ function ToggleSaveModeSwitch() {
 function CheckboxHintsToggle() {
   var param = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "none";
   var checkboxId = document.getElementById("checkbox-hints");
+  if (!checkboxId) return;
+  var hints = document.getElementById("hk-hints");
 
   switch (param) {
     case "hide":
-      document.getElementById("hk-hints").classList.add("hidden");
+      if (hints) hints.classList.add("hidden");
       checkboxId.value = "hints-off";
-      checkboxId.checked = false; // remember this choice for subsequent page visits and browser restarts
-
-      if (StorageAvailable('localStorage')) {
-        localStorage.setItem("hkCheckboxHints", "unchecked");
-      }
-
+      checkboxId.checked = false;
+      if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxHints", "unchecked");
       break;
 
     case "show":
-      document.getElementById("hk-hints").classList.remove("hidden");
+      if (hints) hints.classList.remove("hidden");
       checkboxId.value = "hints-on";
-      checkboxId.checked = true; // remember this choice for subsequent page visits and browser restarts
-
-      if (StorageAvailable('localStorage')) {
-        localStorage.setItem("hkCheckboxHints", "checked");
-      }
-
+      checkboxId.checked = true;
+      if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxHints", "checked");
       break;
 
     default:
-      // This runs when the checkbox is not checked
       if (checkboxId.checked === false) {
-        document.getElementById("hk-hints").classList.add("hidden");
-        checkboxId.value = "hints-off"; // remember this choice for subsequent page visits and browser restarts
-
-        if (StorageAvailable('localStorage')) {
-          localStorage.setItem("hkCheckboxHints", "unchecked");
-        }
-      } // This runs when the checkbox is checked
-      else {
-        document.getElementById("hk-hints").classList.remove("hidden");
-        checkboxId.value = "hints-on"; // remember this choice for subsequent page visits and browser restarts
-
-        if (StorageAvailable('localStorage')) {
-          localStorage.setItem("hkCheckboxHints", "checked");
-        }
+        if (hints) hints.classList.add("hidden");
+        checkboxId.value = "hints-off";
+        if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxHints", "unchecked");
+      } else {
+        if (hints) hints.classList.remove("hidden");
+        checkboxId.value = "hints-on";
+        if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxHints", "checked");
       }
 
   }
 }
 /**
- * Toggles display of ".spoiler-span" class. On click with no parameters or on demand when called with a parameter
+ * Toggles the ".blurred" class on spoiler elements (names + suffixes) for the Spoilers checkbox.
  * @param {string} param "hide", "show" or none (optional)
  */
 
@@ -12709,87 +13344,62 @@ function CheckboxHintsToggle() {
 function CheckboxSpoilersToggle() {
   var param = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "none";
   var checkboxId = document.getElementById("checkbox-spoilers");
+  if (!checkboxId) return;
   var allClassElements = document.querySelectorAll(".spoiler-span");
   var allClassElementsRed = document.querySelectorAll(".spoiler-red");
   var length = allClassElements.length;
   var lengthRed = allClassElementsRed.length;
 
+  function blurAll() {
+    for (var i = 0; i < length; i++) {
+      allClassElements[i].classList.add("blurred");
+    }
+
+    for (var _i = 0; _i < lengthRed; _i++) {
+      allClassElementsRed[_i].classList.add("blurred");
+    }
+  }
+
+  function revealAll() {
+    for (var i = 0; i < length; i++) {
+      allClassElements[i].classList.remove("blurred");
+    }
+
+    for (var _i2 = 0; _i2 < lengthRed; _i2++) {
+      allClassElementsRed[_i2].classList.remove("blurred");
+    }
+  }
+
   switch (param) {
     case "hide":
-      for (var i = 0; i < length; i++) {
-        allClassElements[i].classList.add("blurred");
-      }
-
-      for (var _i5 = 0; _i5 < lengthRed; _i5++) {
-        allClassElementsRed[_i5].classList.add("blurred");
-      }
-
+      blurAll();
       checkboxId.value = "spoilers-off";
-      checkboxId.checked = false; // remember this choice for subsequent page visits and browser restarts
-
-      if (StorageAvailable('localStorage')) {
-        localStorage.setItem("hkCheckboxSpoilers", "unchecked");
-      }
-
+      checkboxId.checked = false;
+      if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxSpoilers", "unchecked");
       break;
 
     case "show":
-      for (var _i6 = 0; _i6 < length; _i6++) {
-        allClassElements[_i6].classList.remove("blurred");
-      }
-
-      for (var _i7 = 0; _i7 < lengthRed; _i7++) {
-        allClassElementsRed[_i7].classList.remove("blurred");
-      }
-
+      revealAll();
       checkboxId.value = "spoilers-on";
-      checkboxId.checked = true; // remember this choice for subsequent page visits and browser restarts
-
-      if (StorageAvailable('localStorage')) {
-        localStorage.setItem("hkCheckboxSpoilers", "checked");
-      }
-
+      checkboxId.checked = true;
+      if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxSpoilers", "checked");
       break;
 
     default:
-      // This runs when the checkbox is not checked
       if (checkboxId.checked === false) {
-        for (var _i8 = 0; _i8 < length; _i8++) {
-          allClassElements[_i8].classList.add("blurred");
-        }
-
-        for (var _i9 = 0; _i9 < lengthRed; _i9++) {
-          allClassElementsRed[_i9].classList.add("blurred");
-        }
-
-        checkboxId.value = "spoilers-off"; // remember this choice for subsequent page visits and browser restarts
-
-        if (StorageAvailable('localStorage')) {
-          localStorage.setItem("hkCheckboxSpoilers", "unchecked");
-        }
-
-        break;
-      } // This runs when the checkbox is checked
-      else {
-        for (var _i10 = 0; _i10 < length; _i10++) {
-          allClassElements[_i10].classList.remove("blurred");
-        }
-
-        for (var _i11 = 0; _i11 < lengthRed; _i11++) {
-          allClassElementsRed[_i11].classList.remove("blurred");
-        }
-
-        checkboxId.value = "spoilers-on"; // remember this choice for subsequent page visits and browser restarts
-
-        if (StorageAvailable('localStorage')) {
-          localStorage.setItem("hkCheckboxSpoilers", "checked");
-        }
+        blurAll();
+        checkboxId.value = "spoilers-off";
+        if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxSpoilers", "unchecked");
+      } else {
+        revealAll();
+        checkboxId.value = "spoilers-on";
+        if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxSpoilers", "checked");
       }
 
   }
 }
 /**
- * Toggles display of completed items, leaving only incomplete ones.
+ * Toggles the "show-incomplete-only" body class to hide completed entries.
  * @param {string} param "hide", "show" or none (optional)
  */
 
@@ -12797,118 +13407,39 @@ function CheckboxSpoilersToggle() {
 function CheckboxIncompleteToggle() {
   var param = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "none";
   var checkboxId = document.getElementById("checkbox-incomplete");
+  if (!checkboxId) return;
 
   switch (param) {
     case "hide":
       document.body.classList.remove("show-incomplete-only");
       checkboxId.value = "incomplete-off";
-      checkboxId.checked = false; // remember this choice for subsequent page visits and browser restarts
-
-      if (StorageAvailable('localStorage')) {
-        localStorage.setItem("hkCheckboxIncomplete", "unchecked");
-      }
-
+      checkboxId.checked = false;
+      if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxIncomplete", "unchecked");
       break;
 
     case "show":
       document.body.classList.add("show-incomplete-only");
       checkboxId.value = "incomplete-on";
-      checkboxId.checked = true; // remember this choice for subsequent page visits and browser restarts
-
-      if (StorageAvailable('localStorage')) {
-        localStorage.setItem("hkCheckboxIncomplete", "checked");
-      }
-
+      checkboxId.checked = true;
+      if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxIncomplete", "checked");
       break;
 
     default:
-      // This runs when the checkbox is not checked
       if (checkboxId.checked === false) {
         document.body.classList.remove("show-incomplete-only");
-        checkboxId.value = "incomplete-off"; // remember this choice for subsequent page visits and browser restarts
-
-        if (StorageAvailable('localStorage')) {
-          localStorage.setItem("hkCheckboxIncomplete", "unchecked");
-        }
-      } // This runs when the checkbox is checked
-      else {
+        checkboxId.value = "incomplete-off";
+        if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxIncomplete", "unchecked");
+      } else {
         document.body.classList.add("show-incomplete-only");
-        checkboxId.value = "incomplete-on"; // remember this choice for subsequent page visits and browser restarts
-
-        if (StorageAvailable('localStorage')) {
-          localStorage.setItem("hkCheckboxIncomplete", "checked");
-        }
+        checkboxId.value = "incomplete-on";
+        if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxIncomplete", "checked");
       }
 
-  }
-}
-/**
- * Hides all other tabs, except the one which button was clicked (shows only the chosen tab)
- * @param {String} clickedButton The click target (button clicked)
- */
-
-
-function PageSwitchTab(clickedButton) {
-  if (clickedButton === "all") {
-    document.body.classList.add("show-all-tabs");
-  } else {
-    document.body.classList.remove("show-all-tabs");
-  }
-
-  var sectionList = document.querySelectorAll(".large-section");
-  var buttonList = document.querySelectorAll(".tab-switch");
-  /* Make Active Tab Visible */
-
-  for (var i = 0, length = sectionList.length; i < length; i++) {
-    if (clickedButton === "all") {
-      if (sectionList[i].classList.contains("hidden")) {
-        sectionList[i].classList.remove("hidden");
-      }
-    } else {
-      /* Other tabs except the clicked one */
-      if (sectionList[i].id !== "tab-".concat(clickedButton)) {
-        if (!sectionList[i].classList.contains("hidden")) {
-          sectionList[i].classList.add("hidden");
-        }
-      }
-      /* The clicked tab */
-      else {
-        if (sectionList[i].classList.contains("hidden")) {
-          sectionList[i].classList.remove("hidden");
-        }
-      }
-    }
-  }
-  /* Make Active Button stand out */
-
-
-  for (var _i12 = 0, _length = buttonList.length; _i12 < _length; _i12++) {
-    /* Other buttons except the clicked one */
-    if (buttonList[_i12].id !== "button-switch-".concat(clickedButton)) {
-      if (buttonList[_i12].classList.contains("tab-active")) {
-        buttonList[_i12].classList.remove("tab-active");
-      }
-    }
-    /* The clicked button */
-    else {
-      if (!buttonList[_i12].classList.contains("tab-active")) {
-        buttonList[_i12].classList.add("tab-active");
-      }
-    }
-  }
-  /* remember this choice for subsequent page visits and browser restarts */
-
-
-  if (StorageAvailable('localStorage')) {
-    if (clickedButton) {
-      localStorage.setItem("hkTabActive", clickedButton);
-    }
   }
 }
 /**
  * Detects whether Storage is both supported and available.
- * MDN WebDocs https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API#feature-detecting_localstorage
- * @param {Storage} type type of storage. Ex. "localStorage" or "sessionStorage"
+ * @param {string} type "localStorage" or "sessionStorage"
  * @returns {Boolean}
  */
 
@@ -12923,63 +13454,46 @@ function StorageAvailable(type) {
     storage.removeItem(x);
     return true;
   } catch (e) {
-    return e instanceof DOMException && ( // everything except Firefox
-    e.code === 22 || // Firefox
-    e.code === 1014 || // test name field too, because code might not be present
-    // everything except Firefox
-    e.name === 'QuotaExceededError' || // Firefox
-    e.name === 'NS_ERROR_DOM_QUOTA_REACHED') && // acknowledge QuotaExceededError only if there's something already stored
-    storage && storage.length !== 0;
+    return e instanceof DOMException && (e.code === 22 || e.code === 1014 || e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') && storage && storage.length !== 0;
   }
 }
 /**
- * Fills the innerHTML of a given HTML Element with provided contents
- * @param {string} elementId Element ID to update
- * @param {string} textFill Updated contents (innerHTML)
+ * Fills the innerHTML of a given HTML Element with provided contents.
  */
 
 
 function FillInnerHTML(elementId, textFill) {
   var element = document.getElementById(elementId);
-  element.innerHTML = textFill;
+  if (element) element.innerHTML = textFill;
 }
 /**
- * Focuses, selects and copies to clipboard contents inside a clicked element. Includes optional tooltip update after the copying is done.
- * @param {MouseEvent} mouseEvent from the clicked element (AddEventListener)
- * @param {string} tooltipId Element ID of the tooltip to update
- * @param {string} tooltipFill Updated contents of the tooltip
+ * Focuses, selects and copies the clicked input's contents to the clipboard, with an optional tooltip update.
  */
 
 
 function SelectCopyInputText(mouseEvent) {
   var tooltipId = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
   var tooltipFill = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-  var element = document.getElementById(mouseEvent.target.id); // this prevents the un-selected effect after clicking the second time (clears all selection first)
+  var element = document.getElementById(mouseEvent.target.id);
+  if (!element) return;
 
   if (window.getSelection) {
     window.getSelection().removeAllRanges();
   }
 
-  element.focus(); // best to focus the element first before selecting
-
+  element.focus();
   element.select();
-  element.setSelectionRange(0, 99999); // for mobile devices
-  // Copy the text inside the text field to clipboard
-
-  document.execCommand("copy"); // optional tooltip showing
-
+  element.setSelectionRange(0, 99999);
+  document.execCommand("copy");
   if (tooltipFill.length && tooltipId.length) FillInnerHTML(tooltipId, tooltipFill);
 }
 
 function FileNameFormat(file, nameLength, beginLength, endLength) {
   var fileName = file.name;
-  /* Shorten the file name if too long */
 
   if (fileName.length > nameLength) {
-    var begin = fileName.slice(0, beginLength); // take X characters from the beginning (0)
-
-    var end = fileName.slice(-endLength); // take X characters from the end (-)
-
+    var begin = fileName.slice(0, beginLength);
+    var end = fileName.slice(-endLength);
     fileName = "".concat(begin, "..").concat(end);
   }
 
@@ -12993,15 +13507,27 @@ function FileDateFormat(file) {
   var day = fileDate.getDate();
   var hour = fileDate.getHours();
   var minutes = fileDate.getMinutes();
-  /* var seconds = fileDate.getSeconds(); */
-
   if (month < 10) month = "0" + month;
   if (day < 10) day = "0" + day;
   if (hour < 10) hour = "0" + hour;
   if (minutes < 10) minutes = "0" + minutes;
-  /* if (seconds < 10) seconds = "0" + seconds; */
-
   return "".concat(year, ".").concat(month, ".").concat(day, " ").concat(hour, ":").concat(minutes);
+}
+/**
+ * Reflects each filter checkbox's checked state onto ALL of its labels (sidebar + mobile
+ * chips) via an .is-active class. Needed because the mobile chips share the checkbox by
+ * `for=` but are not peer-siblings, so CSS peer-checked can't style them.
+ */
+
+
+function SyncFilterChips() {
+  ["checkbox-spoilers", "checkbox-incomplete"].forEach(function (id) {
+    var cb = document.getElementById(id);
+    if (!cb) return;
+    document.querySelectorAll("label[for=\"".concat(id, "\"]")).forEach(function (lbl) {
+      lbl.classList.toggle("is-active", cb.checked);
+    });
+  });
 }
 /* ========================== Event Listeners ========================== */
 
@@ -13009,55 +13535,61 @@ function FileDateFormat(file) {
 
 
 document.addEventListener("scroll", function () {
-  TogglePageScrollElement(
-  /* the document element root (<html>) */
-  ROOT,
-  /* Which element to toggle visibility */
-  SCROLL_BUTTON,
-  /* How far the user has to scroll to show the element */
-  0.1);
+  TogglePageScrollElement(ROOT, SCROLL_BUTTON, 0.1);
 });
 /* ---------------- Scroll to top when clicked ------------------- */
 
-SCROLL_BUTTON.addEventListener("click", function () {
-  ScrollToElement(ROOT);
-});
-/* ------------- Auto select & copy to clipboard when the save file location input text is clicked once ------------- */
+if (SCROLL_BUTTON) {
+  SCROLL_BUTTON.addEventListener("click", function () {
+    ScrollToElement(ROOT);
+  });
+}
+/* ------------- Auto select & copy the save-file location on click ------------- */
 
-document.getElementById("save-location-input").addEventListener("click", function (e) {
-  var tooltip = document.getElementById("save-location-input-tooltip");
-  SelectCopyInputText(e, "save-location-input-tooltip", "Copied save files location to clipboard");
-  /* make sure that the tooltip is centered */
 
-  tooltip.style.marginLeft = "-".concat(tooltip.offsetWidth / 2, "px");
-}, false);
-/* -------------- Switch text back to the default on mouse out -------------- */
+(function () {
+  var saveLocation = document.getElementById("save-location-input");
+  if (!saveLocation) return;
+  saveLocation.addEventListener("click", function (e) {
+    var tooltip = document.getElementById("save-location-input-tooltip");
+    SelectCopyInputText(e, "save-location-input-tooltip", "Copied save files location to clipboard");
+    if (tooltip) tooltip.style.marginLeft = "-".concat(tooltip.offsetWidth / 2, "px");
+  }, false);
+  saveLocation.addEventListener("mouseout", function () {
+    var tooltip = document.getElementById("save-location-input-tooltip");
 
-document.getElementById("save-location-input").addEventListener("mouseout", function () {
-  var tooltip = document.getElementById("save-location-input-tooltip");
-  /* change the text and center only when the text was different */
-
-  if (tooltip.innerHTML !== "Click once to copy to clipboard") {
-    FillInnerHTML("save-location-input-tooltip", "Click once to copy to clipboard");
-    /* make sure that the tooltip is centered */
-
-    tooltip.style.marginLeft = "-".concat(tooltip.offsetWidth / 2, "px");
-  }
-}, false);
+    if (tooltip && tooltip.innerHTML !== "Click once to copy to clipboard") {
+      FillInnerHTML("save-location-input-tooltip", "Click once to copy to clipboard");
+      tooltip.style.marginLeft = "-".concat(tooltip.offsetWidth / 2, "px");
+    }
+  }, false);
+})();
 /* ------------ Toggle Save Mode Switch: Text Mode or File Mode -------------- */
 
-document.getElementById("toggle-mode").addEventListener("click", ToggleSaveModeSwitch, false);
+
+(function () {
+  var toggleMode = document.getElementById("toggle-mode");
+  if (toggleMode) toggleMode.addEventListener("click", ToggleSaveModeSwitch, false);
+})();
 /* ------------- Checkbox functions ---------------------- */
 
-document.getElementById("checkbox-hints").addEventListener("click", CheckboxHintsToggle, false);
-document.getElementById("checkbox-spoilers").addEventListener("click", CheckboxSpoilersToggle, false);
-document.getElementById("checkbox-incomplete").addEventListener("click", CheckboxIncompleteToggle, false);
+
+(function () {
+  var hints = document.getElementById("checkbox-hints");
+  var spoilers = document.getElementById("checkbox-spoilers");
+  var incomplete = document.getElementById("checkbox-incomplete");
+  if (hints) hints.addEventListener("click", CheckboxHintsToggle, false);
+  if (spoilers) spoilers.addEventListener("click", CheckboxSpoilersToggle, false);
+  if (incomplete) incomplete.addEventListener("click", CheckboxIncompleteToggle, false);
+  if (spoilers) spoilers.addEventListener("click", SyncFilterChips, false);
+  if (incomplete) incomplete.addEventListener("click", SyncFilterChips, false);
+})();
 /* ------------ Drag & drop file to the window -------------- */
+
 
 window.addEventListener('dragover', function (event) {
   event.stopPropagation();
-  event.preventDefault(); // Style the drag-and-drop as a "copy file" operation.
-
+  event.preventDefault();
   event.dataTransfer.dropEffect = 'copy';
 });
 window.addEventListener('drop', function (event) {
@@ -13067,94 +13599,2487 @@ window.addEventListener('drop', function (event) {
   /* Launch save file analyzing */
 
   (0,_LoadSaveFile_js__WEBPACK_IMPORTED_MODULE_0__.LoadSaveFile)(dt, performance.now());
-  var label = document.getElementById("save-area-file").nextElementSibling;
+  var fileInput = document.getElementById("save-area-file");
+  if (!fileInput || !dt.files || !dt.files[0]) return;
+  var label = fileInput.nextElementSibling;
+  if (!label) return;
   var labelInitialText = label.innerHTML;
-  /* Shorten the file name if longer than 16 characters. Display first 10 characters and last 4. */
-
   var fileName = FileNameFormat(dt.files[0], 16, 10, 4);
-  /* Display a custom formatted last modified date. */
-
   var fileDate = FileDateFormat(dt.files[0]);
-  /* Display the save file name and date on the button */
 
   if (fileName) {
-    label.innerHTML = "".concat(SYMBOL_FILE).concat(fileName, "<div class=\"code-little\">").concat(fileDate, "</div>");
+    label.innerHTML = "".concat(SYMBOL_FILE, "<span class=\"align-middle\">").concat(fileName, "</span><div class=\"code-little\">").concat(fileDate, "</div>");
   } else {
     label.innerHTML = labelInitialText;
   }
 });
-/* ---------- Monitor file input change and show the file name when file is loaded ----------- */
+/* ---------- Show the file name on the Load button when a file is chosen ----------- */
 
-document.getElementById("save-area-file").addEventListener("change", function (event) {
-  var label = document.getElementById("save-area-file").nextElementSibling;
-  var labelInitialText = label.innerHTML;
-  /* Shorten the file name if longer than 16 characters. Display first 10 characters and last 4. */
+(function () {
+  var fileInput = document.getElementById("save-area-file");
+  if (!fileInput) return;
+  fileInput.addEventListener("change", function (event) {
+    var label = fileInput.nextElementSibling;
+    if (!label || !event.target.files || !event.target.files[0]) return;
+    var labelInitialText = label.innerHTML;
+    var fileName = FileNameFormat(event.target.files[0], 16, 10, 4);
+    var fileDate = FileDateFormat(event.target.files[0]);
 
-  var fileName = FileNameFormat(event.target.files[0], 16, 10, 4);
-  /* Display a custom formatted last modified date. */
-
-  var fileDate = FileDateFormat(event.target.files[0]);
-
-  if (fileName) {
-    label.innerHTML = "".concat(SYMBOL_FILE).concat(fileName, "<div class=\"code-little\">").concat(fileDate, "</div>");
-  } else {
-    label.innerHTML = labelInitialText;
-  }
-}); // Toggle collapse state on section header click
-
-document.addEventListener("click", function (event) {
-  var h2 = event.target.closest(".section-container h2");
-
-  if (h2) {
-    var section = h2.closest(".section-container");
-
-    if (section.id === "hk-intro" || section.id === "hk-hints") {
-      return;
+    if (fileName) {
+      label.innerHTML = "".concat(SYMBOL_FILE, "<span class=\"align-middle\">").concat(fileName, "</span><div class=\"code-little\">").concat(fileDate, "</div>");
+    } else {
+      label.innerHTML = labelInitialText;
     }
+  });
+})();
+/* ------------- Persist the collapsible sidebar "View" section state ------------- */
 
-    section.classList.toggle("collapsed"); // Remember this collapse state in localStorage
 
-    if (StorageAvailable('localStorage')) {
-      var isCollapsed = section.classList.contains("collapsed");
-      localStorage.setItem("collapsed-".concat(section.id), isCollapsed);
-    }
+(function () {
+  var details = document.getElementById("view-filters");
+  if (!details) return;
+
+  if (StorageAvailable("localStorage")) {
+    var saved = localStorage.getItem("hkViewOpen");
+    if (saved === "closed") details.open = false;else if (saved === "open") details.open = true;
   }
 
-  var h1 = event.target.closest(".large-section h1.tab-header");
-
-  if (h1) {
-    var largeSection = h1.closest(".large-section");
-    largeSection.classList.toggle("collapsed"); // Remember this collapse state in localStorage
-
-    if (StorageAvailable('localStorage')) {
-      var _isCollapsed = largeSection.classList.contains("collapsed");
-
-      localStorage.setItem("collapsed-".concat(largeSection.id), _isCollapsed);
+  details.addEventListener("toggle", function () {
+    if (StorageAvailable("localStorage")) {
+      localStorage.setItem("hkViewOpen", details.open ? "open" : "closed");
     }
-  }
-});
-/* -------- Clean the text area and file input from leftover save file if present (Firefox especially) -------- */
+  });
+})();
+/* -------- Clean the text area and file input from leftover save file (Firefox especially) -------- */
+
 
 document.addEventListener("DOMContentLoaded", function () {
   _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+    var sa, saf;
     return regeneratorRuntime.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            document.getElementById("save-area").value = "";
-            document.getElementById("save-area-file").value = "";
+            sa = document.getElementById("save-area");
+            saf = document.getElementById("save-area-file");
+            if (sa) sa.value = "";
+            if (saf) saf.value = "";
 
-          case 2:
+          case 4:
           case "end":
             return _context.stop();
         }
       }
     }, _callee);
   }))();
+
+  SyncFilterChips();
 });
 /* ------------------------- Exports ------------------------------- */
 
 
+
+/***/ }),
+
+/***/ "./src/js/screens/abilities.js":
+/*!*************************************!*\
+  !*** ./src/js/screens/abilities.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * screens/abilities.js — "Special Abilities" bespoke renderer.
+ *
+ * db.sections.equipment holds the 7 traversal relics (Mantis Claw, Mothwing
+ * Cloak, Shade Cloak, Monarch Wings, Crystal Heart, Isma's Tear, King's Brand).
+ * Rendered as a bento grid of "relic" cards. A collected relic shows an amber
+ * MASTERED status badge + filled (FILL 1) glyph + watermark; an uncollected one
+ * is a dim, locked card. entry key != display name, so entry.name drives titles.
+ * Header count via countRuleA(equipment) matches the sidebar badge.
+ */
+
+
+/**
+ * Per-relic presentation data keyed by db.sections.equipment entry key.
+ * icon = Material Symbol; color = COMPLETE class literal for the filled glyph;
+ * wide = spans both grid columns (the feature card).
+ */
+
+var RELIC_META = {
+  hasWalljump: {
+    icon: "front_hand",
+    color: "text-secondary-container"
+  },
+  hasDash: {
+    icon: "air",
+    color: "text-secondary-container"
+  },
+  hasShadowDash: {
+    icon: "dark_mode",
+    color: "text-primary"
+  },
+  hasDoubleJump: {
+    icon: "flight",
+    color: "text-secondary-container",
+    wide: true
+  },
+  hasSuperDash: {
+    icon: "diamond",
+    color: "text-tertiary-container"
+  },
+  hasAcidArmour: {
+    icon: "water_drop",
+    color: "text-success-green"
+  },
+  hasKingsBrand: {
+    icon: "workspace_premium",
+    color: "text-secondary-container"
+  }
+};
+var FALLBACK_META = {
+  icon: "bolt",
+  color: "text-secondary-container"
+};
+/**
+ * MASTERED (complete) or LOCKED (incomplete) status pill.
+ * @param {boolean} complete
+ * @returns {string}
+ */
+
+function statusPill(complete) {
+  return complete ? "<div class=\"px-sm py-xs rounded bg-surface-glow border border-secondary-container/30 flex items-center gap-xs shrink-0\">" + "<div class=\"w-2 h-2 rounded-full bg-success-green shadow-[0_0_8px_#16c60c]\"></div>" + "<span class=\"font-code-path text-caption text-secondary-container\">MASTERED</span>" + "</div>" : "<div class=\"px-sm py-xs rounded bg-surface-glow border border-border-dim flex items-center gap-xs shrink-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym("lock", 0, "text-outline text-[14px]") + "<span class=\"font-code-path text-caption text-lichen-blue\">LOCKED</span>" + "</div>";
+}
+/**
+ * One relic bento card.
+ * @param {object} entry  db entry (may be undefined)
+ * @param {string} key    entry key
+ * @returns {string}
+ */
+
+
+function relicCard(entry, key) {
+  var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry);
+  var meta = RELIC_META[key] || FALLBACK_META;
+  var wide = meta.wide === true;
+  var spanClass = wide ? "md:col-span-2" : "";
+  var name = entry && entry.name != null ? String(entry.name) : key;
+  var wiki = entry && entry.wiki ? entry.wiki : "";
+  var spoiler = entry && entry.spoiler != null ? String(entry.spoiler) : "";
+  var cardBase = complete ? "single-entry completed-item bg-surface-container/85 backdrop-blur-md border border-border-dim border-t-2 border-t-secondary-container/30 rounded-xl p-lg relative overflow-hidden group flex flex-col card-glow" : "single-entry incomplete-item bg-surface-container/40 backdrop-blur-md border border-border-dim rounded-xl p-lg relative overflow-hidden group flex flex-col opacity-80";
+  var cardClass = "".concat(cardBase, " ").concat(spanClass); // Oversized watermark glyph (collected relics only).
+
+  var watermark = complete ? "<div class=\"absolute -right-10 -top-10 opacity-5 pointer-events-none transition-opacity group-hover:opacity-10\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(meta.icon, 1, "text-primary text-[150px]") + "</div>" : ""; // Icon tile.
+
+  var tile = complete ? "<div class=\"w-12 h-12 rounded-lg bg-surface-container-high border border-secondary-container/40 flex items-center justify-center shadow-inner shrink-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(meta.icon, 1, "".concat(meta.color, " text-[28px]")) + "</div>" : "<div class=\"w-12 h-12 rounded-lg bg-surface-container/40 border border-border-dim flex items-center justify-center shrink-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(meta.icon, 0, "text-outline text-[28px]") + "</div>"; // Title (wiki link + blur contract).
+
+  var linkClass = complete ? "wiki" : "wiki spoiler-red blurred";
+  var nameHtml = wiki ? "<a class=\"".concat(linkClass, "\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>") : "<b>".concat(name, "</b>");
+  var titleClass = complete ? "font-headline-md text-headline-md text-on-surface mb-xs relative z-10" : "font-headline-md text-headline-md text-outline mb-xs relative z-10 italic"; // Description (spoiler contract).
+
+  var spoilerSpan = complete ? "spoiler-span-green" : "spoiler-span blurred";
+  var descClass = complete ? "font-body-base text-lichen-blue mb-md relative z-10 line-clamp-2" : "font-body-base text-outline-variant mb-md relative z-10 line-clamp-2";
+  var descHtml = spoiler ? "<p class=\"".concat(descClass, "\"><span class=\"").concat(spoilerSpan, "\"><span class=\"spoiler-text\">").concat(spoiler, "</span></span></p>") : "";
+  return "<div class=\"".concat(cardClass, "\">") + watermark + "<div class=\"flex justify-between items-start mb-md relative z-10\">".concat(tile).concat(statusPill(complete), "</div>") + "<h3 class=\"".concat(titleClass, "\">").concat(nameHtml, "</h3>") + descHtml + "</div>";
+}
+/**
+ * @param {object} db
+ * @returns {string}
+ */
+
+
+function render(db) {
+  var section = db && db.sections ? db.sections.equipment : null;
+  if (!section) return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Load your save file to survey your relics");
+  var entries = section.entries || {};
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Abilities",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  html += "<div class=\"grid grid-cols-1 md:grid-cols-2 gap-md\">";
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry) continue;
+    html += relicCard(entry, key);
+  }
+
+  html += "</div>";
+  void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections;
+  void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml;
+  return html;
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/bestiary.js":
+/*!************************************!*\
+  !*** ./src/js/screens/bestiary.js ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * screens/bestiary.js — Hunter's Journal / Bestiary screen renderer.
+ *
+ * Backing sections:
+ *   huntersJournal (146)          → responsive grid of compact "sketch" cards.
+ *   huntersJournalOptional (24)   → its OWN sub-section (own header) below.
+ *
+ * Journal completion states (from the runtime `entry.icon`):
+ *   green / none          → note fully completed  (complete style, rule A done)
+ *   partialJournal /      → entry encountered but note not completed
+ *     revealed / partial     (amber "encountered" style — NOT counted complete)
+ *   red / (unset)         → entry not yet discovered (locked style)
+ *
+ * huntersJournal header uses the 3-part form "done / encountered of total":
+ *   done        = countRuleA(huntersJournal).done   (fully-journaled notes)
+ *   encountered = entries whose icon is green | partialJournal | revealed | partial
+ *   total       = number of entries (146)
+ *
+ * Every card carries the .single-entry + completed-item/incomplete-item +
+ * spoiler/.wiki blur contract (partial/revealed => incomplete-item).
+ */
+
+
+void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections;
+void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml;
+var ENCOUNTERED_ICONS = new Set(["green", "none", "partialJournal", "revealed", "partial"]);
+var CARD_COMPLETE = "single-entry completed-item bg-surface-container/85 backdrop-blur-md border border-border-dim border-t-2 border-t-success-green/30 rounded-lg p-md flex flex-col gap-sm hover:bg-surface-container-high transition-colors group";
+var CARD_ENCOUNTERED = "single-entry incomplete-item bg-surface-container/60 backdrop-blur-md border border-secondary-container/40 border-t-2 border-t-secondary-container/50 rounded-lg p-md flex flex-col gap-sm hover:bg-surface-container-high transition-colors group";
+var CARD_UNSEEN = "single-entry incomplete-item bg-surface-container-lowest/50 backdrop-blur-md border border-border-dim rounded-lg p-md flex flex-col gap-sm opacity-60";
+var TILE_COMPLETE = "w-full h-24 rounded bg-surface-container-lowest border border-success-green/30 flex items-center justify-center shadow-glow";
+var TILE_ENCOUNTERED = "w-full h-24 rounded bg-surface-container-lowest border border-secondary-container/40 flex items-center justify-center";
+var TILE_UNSEEN = "w-full h-24 rounded bg-surface-container-lowest/30 border border-dashed border-border-dim flex items-center justify-center";
+/** Name link + spoiler span honoring the blur contract. */
+
+function nameSpoiler(entry, complete) {
+  var name = entry && entry.name != null ? String(entry.name) : "";
+  var nameHtml;
+
+  if (entry && entry.wiki) {
+    var linkClass = complete ? "wiki" : "wiki spoiler-red blurred";
+    nameHtml = "<a class=\"".concat(linkClass, "\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(entry.wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>");
+  } else {
+    nameHtml = "<b>".concat(name, "</b>");
+  }
+
+  var spoilerHtml = "";
+
+  if (entry && entry.spoiler) {
+    var spanClass = complete ? "spoiler-span-green" : "spoiler-span blurred";
+    spoilerHtml = "<span class=\"".concat(spanClass, "\"><span class=\"spoiler-text\">").concat(entry.spoiler, "</span></span>");
+  }
+
+  return {
+    nameHtml: nameHtml,
+    spoilerHtml: spoilerHtml
+  };
+}
+/** Classify an entry into one of the three journal states. */
+
+
+function stateOf(entry) {
+  if ((0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry)) return "complete";
+  var icon = entry ? entry.icon : "";
+  if (icon === "partialJournal" || icon === "revealed" || icon === "partial") return "encountered";
+  return "unseen";
+}
+/** One compact sketch card. */
+
+
+function journalCard(entry, key) {
+  var state = stateOf(entry);
+  var complete = state === "complete";
+  var cardClass, tileClass, glyph, glyphClass, statusHtml;
+
+  if (state === "complete") {
+    cardClass = CARD_COMPLETE;
+    tileClass = TILE_COMPLETE;
+    glyph = "pest_control";
+    glyphClass = "text-success-green text-3xl";
+    statusHtml = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.statusBadge("Journaled", "complete");
+  } else if (state === "encountered") {
+    cardClass = CARD_ENCOUNTERED;
+    tileClass = TILE_ENCOUNTERED;
+    glyph = "pest_control";
+    glyphClass = "text-secondary-container text-3xl";
+    statusHtml = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.statusBadge("Encountered", "complete");
+  } else {
+    cardClass = CARD_UNSEEN;
+    tileClass = TILE_UNSEEN;
+    glyph = "help";
+    glyphClass = "text-outline text-3xl opacity-40";
+    statusHtml = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.statusBadge("Unseen", "unseen");
+  }
+
+  var _nameSpoiler = nameSpoiler(entry, complete),
+      nameHtml = _nameSpoiler.nameHtml,
+      spoilerHtml = _nameSpoiler.spoilerHtml;
+
+  var displayName = state === "unseen" ? "<h3 class=\"font-code-path text-code-path text-outline tracking-widest truncate\">".concat(nameHtml, "</h3>") : "<h3 class=\"font-body-bold text-body-bold text-on-surface group-hover:text-secondary-container transition-colors truncate\">".concat(nameHtml, "</h3>");
+  var locationHtml = spoilerHtml ? "<p class=\"font-caption text-caption text-lichen-blue line-clamp-2\">".concat(spoilerHtml, "</p>") : "";
+  return "<div class=\"".concat(cardClass, "\">") + "<div class=\"".concat(tileClass, "\">") + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(glyph, complete ? 1 : 0, glyphClass) + "</div>" + "<div class=\"flex justify-start\">" + statusHtml + "</div>" + "<div class=\"min-w-0\">".concat(displayName).concat(locationHtml, "</div>") + "</div>";
+}
+/** Custom header with the 3-part "done / encountered of total" pill. */
+
+
+function tripartHeader(title, subtitle, done, encountered, total) {
+  var subtitleHtml = subtitle ? "<p class=\"font-label-sm text-lichen-blue\">".concat(subtitle, "</p>") : "";
+  var pill = "<span class=\"font-code-path text-secondary-container bg-surface-glow px-2 py-1 rounded border border-border-dim\">" + "[".concat(done, " / ").concat(encountered, " of ").concat(total, "]</span>");
+  return "<div class=\"flex justify-between items-end mb-lg gap-md\">" + "<div><h2 class=\"font-headline-md text-headline-md text-on-surface relic-glow\">".concat(title, "</h2>").concat(subtitleHtml, "</div>") + "<div class=\"shrink-0\">".concat(pill, "</div>") + "</div>";
+}
+
+var GRID = "<div class=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md\">";
+/** Render the base 146 Hunter's Journal section. */
+
+function journalSection(section) {
+  if (!section) return "";
+  var entries = section.entries || {};
+  var keys = Object.keys(entries);
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done;
+
+  var encountered = 0;
+
+  for (var _i = 0, _keys = keys; _i < _keys.length; _i++) {
+    var key = _keys[_i];
+    var entry = entries[key];
+    if (entry && ENCOUNTERED_ICONS.has(entry.icon)) encountered++;
+  }
+
+  var total = keys.length || section.maxPercent || 146;
+  var html = "<div class=\"mb-section-gap\">";
+  html += tripartHeader(section.h2 || "Hunter's Journal", (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description), done, encountered, total);
+
+  if (!keys.length) {
+    html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Load your save file to reveal the Hunter's Journal.");
+    html += "</div>";
+    return html;
+  }
+
+  html += GRID;
+
+  for (var _i2 = 0, _keys2 = keys; _i2 < _keys2.length; _i2++) {
+    var _key = _keys2[_i2];
+    var _entry = entries[_key];
+    if (!_entry) continue;
+    html += journalCard(_entry, _key);
+  }
+
+  html += "</div></div>";
+  return html;
+}
+/** Render the optional (Bestiary) section — its own standard 2-part header. */
+
+
+function optionalSection(section) {
+  if (!section) return "";
+  var entries = section.entries || {};
+  var keys = Object.keys(entries);
+
+  var _countRuleA2 = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA2.done,
+      total = _countRuleA2.total;
+
+  var html = "<div class=\"mb-section-gap\">";
+  html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Optional Journal Entries",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+
+  if (!keys.length) {
+    html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("No optional journal entries recorded.");
+    html += "</div>";
+    return html;
+  }
+
+  html += GRID;
+
+  for (var _i3 = 0, _keys3 = keys; _i3 < _keys3.length; _i3++) {
+    var key = _keys3[_i3];
+    var entry = entries[key];
+    if (!entry) continue;
+    html += journalCard(entry, key);
+  }
+
+  html += "</div></div>";
+  return html;
+}
+/**
+ * @param {object} db the HK singleton
+ * @returns {string} inner content HTML (no <section>/shell wrapper)
+ */
+
+
+function render(db) {
+  var sections = db && db.sections ? db.sections : {};
+  var html = "";
+  html += journalSection(sections.huntersJournal);
+  html += optionalSection(sections.huntersJournalOptional);
+  if (!html) html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Load your save file to open the Hunter's Journal.");
+  return html;
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/collectibles.js":
+/*!****************************************!*\
+  !*** ./src/js/screens/collectibles.js ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * collectibles.js — "Collectibles" screen (composite: rancidEggs + items).
+ *
+ * Two sub-sections of C.listRow, each with its own C.sectionHeader (Rule A
+ * count) so the on-screen counts sum to the sidebar badge. Some rancid-egg
+ * names carry a "(missable)" suffix — kept verbatim.
+ */
+
+
+void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections;
+void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml;
+/**
+ * Render one backing section: header + a single-column stack of list rows.
+ * @param {object} section db.sections[key] (or falsy)
+ * @param {string} fallbackTitle
+ * @returns {string}
+ */
+
+function renderCollectibleSection(section, fallbackTitle) {
+  if (!section) return "";
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || fallbackTitle,
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  html += "<div class=\"space-y-sm mb-lg\">";
+  var entries = section.entries || {};
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry) continue;
+    html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.listRow({
+      name: entry.name != null ? String(entry.name) : key,
+      spoiler: entry.spoiler != null ? String(entry.spoiler) : "",
+      wiki: entry.wiki || "",
+      complete: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry),
+      spoilerHtml: true,
+      meta: entry.amount != null ? String(entry.amount) : ""
+    });
+  }
+
+  html += "</div>";
+  return html;
+}
+
+function render(db) {
+  var sections = db && db.sections ? db.sections : {};
+  var html = "";
+  html += renderCollectibleSection(sections.rancidEggs, "Rancid Eggs");
+  html += renderCollectibleSection(sections.items, "Items");
+  if (!html) return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState();
+  return html;
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/colosseum.js":
+/*!*************************************!*\
+  !*** ./src/js/screens/colosseum.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * colosseum.js — "Colosseum of Fools" screen.
+ *
+ * Single backing section: db.sections.colosseum (3 trials — Warrior, Conqueror, Fool).
+ * Bento grid of trial cards; state is derived from completion + sequential unlock:
+ *   complete            → [COMPLETED] (amber badge, teal accent + full teal bar, full width)
+ *   incomplete, prev ok → [LOCKED]    (amber accent, empty amber bar)
+ *   incomplete, prev no → [UNSEEN]    (scarlet accent, struck-through badge, dim empty track)
+ * No numeric per-card counts; the aggregate count lives in the section header.
+ *
+ * Returns INNER content only; the caller wraps it in the outer <section>.
+ */
+
+
+/* One trial card. state ∈ "complete" | "locked" | "unseen". */
+
+function trialCard(entry, key, state) {
+  var complete = state === "complete";
+  var name = entry.name || key;
+  var stateIcon = state === "complete" ? "stars" : state === "locked" ? "shield" : "skull";
+  var iconCls = state === "complete" ? "text-tertiary-container text-2xl shrink-0" : state === "locked" ? "text-secondary-container text-2xl shrink-0" : "text-danger-scarlet text-2xl shrink-0";
+  var wrap = state === "complete" ? "single-entry completed-item md:col-span-2 relative bg-surface-container/85 backdrop-blur-xl border border-border-dim rounded-lg p-lg border-t-2 border-t-secondary-container/30 hover:border-secondary-container/50 transition-all duration-300 group overflow-hidden" : state === "locked" ? "single-entry incomplete-item relative bg-surface-container/85 backdrop-blur-xl border border-border-dim rounded-lg p-lg hover:border-secondary-container/50 transition-all duration-300 group" : "single-entry incomplete-item relative bg-surface-container/85 backdrop-blur-xl border border-border-dim rounded-lg p-lg border-t-2 border-t-danger-scarlet/30 hover:border-danger-scarlet/50 transition-all duration-300 group opacity-90"; // Name — wiki link carrying the spoiler contract (blurred + spoiler-red when not complete).
+
+  var nameCls = complete ? "wiki" : "wiki spoiler-red blurred";
+  var nameHtml = entry.wiki ? "<a class=\"".concat(nameCls, "\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(entry.wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>") : "<b>".concat(name, "</b>"); // Spoiler / unlock requirement — blurred until complete.
+
+  var spoilerHtml = entry.spoiler ? "<p class=\"font-body-base text-lichen-blue text-sm mb-md\"><span class=\"".concat(complete ? "spoiler-span-green" : "spoiler-span blurred", "\"><span class=\"spoiler-text\">").concat(entry.spoiler, "</span></span></p>") : "<p class=\"font-body-base text-lichen-blue text-sm mb-md\">&nbsp;</p>"; // Status badge.
+
+  var badge = state === "complete" ? _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.statusBadge("COMPLETED", "complete") : state === "locked" ? _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.statusBadge("LOCKED", "locked") : _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.statusBadge("UNSEEN", "unseen"); // Progress bar — teal-full / amber-empty / dim empty track.
+
+  var bar = state === "complete" ? _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.progressBar(100, "teal") : state === "locked" ? _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.progressBar(0, "amber") : "<div class=\"w-full h-2 bg-surface-container-highest rounded-full overflow-hidden opacity-50\"></div>";
+  return "<div class=\"".concat(wrap, "\">") + "<div class=\"flex flex-col h-full justify-between\">" + "<div>" + "<div class=\"flex items-center gap-sm mb-xs\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(stateIcon, complete ? 1 : 0, iconCls) + "<h3 class=\"font-headline-md text-headline-md text-on-surface\">".concat(nameHtml, "</h3>") + "</div>" + spoilerHtml + "</div>" + "<div class=\"flex flex-col gap-sm mt-md\">" + "<div class=\"flex justify-end\">".concat(badge, "</div>") + bar + "</div>" + "</div>" + "</div>";
+}
+
+function render(db) {
+  if (!db || !db.sections) return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState();
+  var section = db.sections.colosseum;
+  if (!section) return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("The Colosseum trials are not recorded");
+  void (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections)(db, ["colosseum"]);
+  void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml;
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var header = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Colosseum of Fools",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  var entries = section.entries || {};
+  var cards = [];
+  var prevComplete = true; // the first trial is always available.
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var e = entries[key];
+    if (!e || e.disabled === true) continue;
+    var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(e);
+    var state = complete ? "complete" : prevComplete ? "locked" : "unseen";
+    cards.push(trialCard(e, key, state));
+    prevComplete = complete;
+  }
+
+  var grid = cards.length ? "<div class=\"grid grid-cols-1 md:grid-cols-2 gap-lg\">".concat(cards.join(""), "</div>") : _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("No trials recorded");
+  return "<div class=\"flex flex-col gap-lg\">" + header + grid + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.fleurDivider() + "</div>";
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/content.js":
+/*!***********************************!*\
+  !*** ./src/js/screens/content.js ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * content.js — "Content Packs" screen (composite: grimmTroupe + lifeblood +
+ * godmaster). These are the three free DLC content packs.
+ *
+ * Three sub-sections of C.listRow, each with its own C.sectionHeader (Rule A
+ * count) so the on-screen counts sum to the sidebar badge.
+ */
+
+
+void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections;
+void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml;
+/**
+ * Render one backing section: header + a single-column stack of list rows.
+ * @param {object} section db.sections[key] (or falsy)
+ * @param {string} fallbackTitle
+ * @returns {string}
+ */
+
+function renderContentSection(section, fallbackTitle) {
+  if (!section) return "";
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || fallbackTitle,
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  html += "<div class=\"space-y-sm mb-lg\">";
+  var entries = section.entries || {};
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry) continue;
+    html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.listRow({
+      name: entry.name != null ? String(entry.name) : key,
+      spoiler: entry.spoiler != null ? String(entry.spoiler) : "",
+      wiki: entry.wiki || "",
+      complete: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry),
+      spoilerHtml: true,
+      meta: entry.amount != null ? String(entry.amount) : ""
+    });
+  }
+
+  html += "</div>";
+  return html;
+}
+
+function render(db) {
+  var sections = db && db.sections ? db.sections : {};
+  var html = "";
+  html += renderContentSection(sections.grimmTroupe, "Grimm Troupe Content Pack");
+  html += renderContentSection(sections.lifeblood, "Lifeblood Content Pack");
+  html += renderContentSection(sections.godmaster, "Godmaster Content Pack");
+  if (!html) return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState();
+  return html;
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/dream.js":
+/*!*********************************!*\
+  !*** ./src/js/screens/dream.js ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * dream.js — "Dream Realm" COMPOSITE screen.
+ *
+ * Backing sections (rendered in order, each with its own C.sectionHeader so the
+ * on-screen counts sum to the sidebar badge):
+ *   1. dreamNail     — Dream Nail & Essence (essence tracker card + acquisition rows)
+ *   2. warriorDreams — the 7 Dream Warriors (list rows)
+ *   3. dreamers      — the 3 Dreamers (SEALED / BROKEN status rows)
+ *
+ * Returns the INNER content only; the caller wraps this in
+ * <section class="ledger-screen" data-screen="dream"><div class="mb-section-gap">…</div></section>.
+ */
+
+
+/* Essence display constants (Seer 1800 → Ascension 2400). */
+
+var ESSENCE_MAX = 2400;
+/* Find a live essence amount, if the analyzer attached one to a dreamNail entry. */
+
+function findEssence(section) {
+  var entries = section && section.entries;
+  if (!entries) return null;
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var e = entries[key];
+    if (!e) continue;
+    var n = Number(e.amount);
+
+    if (Number.isFinite(n)) {
+      var max = Number.isFinite(Number(e.amountTotal)) ? Number(e.amountTotal) : ESSENCE_MAX;
+      return {
+        amount: n,
+        max: max > 0 ? max : ESSENCE_MAX
+      };
+    }
+  }
+
+  return null;
+}
+/* Unique essence-tracker card (aggregate, not a per-entry element — no spoiler contract). */
+
+
+function essenceCard(amount, max) {
+  var clamped = amount < 0 ? 0 : amount;
+  var pct = max ? Math.min(100, clamped / max * 100) : 0;
+  return "<section class=\"bg-surface-container/85 backdrop-blur-xl border border-border-dim rounded-xl p-lg flex flex-col gap-md relative overflow-hidden shadow-glow\">" + "<div class=\"absolute top-0 left-0 w-full h-[2px] bg-secondary-container/40\"></div>" + "<div class=\"flex justify-between items-end\">" + "<h3 class=\"font-headline-md text-headline-md text-primary flex items-center gap-sm\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym("flare", 1, "text-secondary-container") + "Dream Essence" + "</h3>" + "<div class=\"font-code-path text-caption text-lichen-blue uppercase tracking-wider\">Awoken Tier</div>" + "</div>" + "<div class=\"flex items-center justify-center py-xl\">" + "<span class=\"font-display-lg text-[64px] leading-none text-secondary-container tracking-widest\">".concat(clamped, "<span class=\"text-surface-variant text-[40px]\">/").concat(max, "</span></span>") + "</div>" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.progressBar(pct, "amber") + "<div class=\"flex justify-between mt-sm font-label-sm text-lichen-blue\">" + "<span>Seer</span><span>Ascension</span>" + "</div>" + "</section>";
+}
+/* ---- Section 1: Dream Nail & Essence ------------------------------------- */
+
+
+function renderDreamNail(section, analyzed) {
+  if (!section) return "";
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var header = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Dream Nail and Essence",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  var essence = findEssence(section);
+  var card = essence ? essenceCard(essence.amount, essence.max) : "";
+  var entries = section.entries || {};
+  var rows = [];
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var e = entries[key];
+    if (!e || e.disabled === true) continue;
+    var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(e);
+    rows.push(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.listRow({
+      icon: "auto_awesome",
+      name: e.name || key,
+      complete: complete,
+      spoiler: e.spoiler || "",
+      wiki: e.wiki || "",
+      statusLabel: complete ? "AWOKEN" : "DORMANT"
+    }));
+  }
+
+  var list = rows.length ? "<div class=\"flex flex-col gap-sm\">".concat(rows.join(""), "</div>") : analyzed ? "" : _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Load your save file to reveal the Dream Nail's essence");
+  return "<section class=\"flex flex-col gap-md\">" + header + card + list + "</section>";
+}
+/* ---- Section 2: Warrior Dreams (Dream Warriors) -------------------------- */
+
+
+function renderWarriorDreams(section) {
+  if (!section) return "";
+
+  var _countRuleA2 = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA2.done,
+      total = _countRuleA2.total;
+
+  var header = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Warrior Dreams",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  var entries = section.entries || {};
+  var rows = [];
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var e = entries[key];
+    if (!e || e.disabled === true) continue;
+    var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(e);
+    rows.push(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.listRow({
+      icon: "local_fire_department",
+      name: e.name || key,
+      complete: complete,
+      spoiler: e.spoiler || "",
+      wiki: e.wiki || "",
+      statusLabel: complete ? "SLAIN" : "DREAMING"
+    }));
+  }
+
+  var list = rows.length ? "<div class=\"flex flex-col gap-sm\">".concat(rows.join(""), "</div>") : _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("No Dream Warriors recorded");
+  return "<section class=\"flex flex-col gap-md\">".concat(header).concat(list, "</section>");
+}
+/* ---- Section 3: The Dreamers -------------------------------------------- */
+
+
+function dreamerIcon(entry) {
+  var w = (entry && (entry.wiki || entry.name) || "").toLowerCase();
+  if (w.indexOf("lurien") !== -1) return "visibility";
+  if (w.indexOf("monomon") !== -1) return "water_drop";
+  if (w.indexOf("herrah") !== -1) return "pets";
+  return "bedtime";
+}
+/* Custom dreamer row — replicates the .single-entry / spoiler / wiki contract by hand,
+   with the mockup's SEALED (scarlet) vs BROKEN (green + strikethrough) states. */
+
+
+function dreamerRow(entry, key) {
+  var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry);
+  var icon = dreamerIcon(entry);
+  var name = entry.name || key;
+  var wrap = complete ? "single-entry completed-item relative overflow-hidden bg-surface-container/60 border border-border-dim rounded-lg p-md flex items-center justify-between gap-md opacity-80 hover:opacity-100 transition-opacity group" : "single-entry incomplete-item relative overflow-hidden bg-surface-container-lowest/80 border border-border-dim rounded-lg p-md flex items-center justify-between gap-md hover:bg-surface-container-high transition-colors group";
+  var accent = complete ? "<div class=\"absolute left-0 top-0 bottom-0 w-1 bg-success-green/50\"></div>" : "<div class=\"absolute left-0 top-0 bottom-0 w-1 bg-surface-variant group-hover:bg-primary/50 transition-colors\"></div>";
+  var iconCls = complete ? "text-surface-variant text-2xl shrink-0" : "text-lichen-blue text-2xl shrink-0";
+  var nameCls = complete ? "wiki font-body-bold text-on-surface-variant line-through decoration-border-bright tracking-wide" : "wiki spoiler-red blurred font-body-bold text-on-surface tracking-wide";
+  var nameHtml = entry.wiki ? "<a class=\"".concat(nameCls, "\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(entry.wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>") : "<b>".concat(name, "</b>");
+  var spoiler = entry.spoiler ? " <span class=\"".concat(complete ? "spoiler-span-green" : "spoiler-span blurred", "\"><span class=\"spoiler-text\">\u2014 ").concat(entry.spoiler, "</span></span>") : "";
+  var badge = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.statusBadge(complete ? "BROKEN" : "SEALED", complete ? "broken" : "sealed");
+  return "<div class=\"".concat(wrap, "\">") + accent + "<div class=\"flex items-center gap-md pl-sm min-w-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(icon, complete ? 1 : 0, iconCls) + "<div class=\"min-w-0\"><h4 class=\"font-body-bold text-on-surface\">".concat(nameHtml).concat(spoiler, "</h4></div>") + "</div>" + "<div class=\"ml-auto shrink-0 pl-sm\">".concat(badge, "</div>") + "</div>";
+}
+
+function renderDreamers(section) {
+  if (!section) return "";
+
+  var _countRuleA3 = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA3.done,
+      total = _countRuleA3.total;
+
+  var header = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Dreamers",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  var entries = section.entries || {};
+  var rows = [];
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var e = entries[key];
+    if (!e || e.disabled === true) continue;
+    rows.push(dreamerRow(e, key));
+  }
+
+  var list = rows.length ? "<div class=\"grid grid-cols-1 gap-sm\">".concat(rows.join(""), "</div>") : _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("No Dreamers recorded");
+  return "<section class=\"flex flex-col gap-md\">".concat(header).concat(list, "</section>");
+}
+/* ---- Entry point --------------------------------------------------------- */
+
+
+function render(db) {
+  if (!db || !db.sections) return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState();
+  var s = db.sections;
+  var analyzed = !!db.saveAnalyzed; // Header count parity check (sums to the sidebar badge for these three keys).
+
+  void (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections)(db, ["dreamNail", "warriorDreams", "dreamers"]);
+  void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml;
+  var parts = [renderDreamNail(s.dreamNail, analyzed), _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.fleurDivider(), renderWarriorDreams(s.warriorDreams), _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.fleurDivider(), renderDreamers(s.dreamers)].filter(Boolean);
+  if (!parts.length) return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState();
+  return "<div class=\"flex flex-col gap-section-gap\">".concat(parts.join(""), "</div>");
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/essentials.js":
+/*!**************************************!*\
+  !*** ./src/js/screens/essentials.js ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * essentials.js — Knight's Ledger COMPOSITE screen.
+ *
+ * Backs 8 sections (in sidebar-badge order) so the on-screen sub-header counts
+ * sum to the sidebar badge:
+ *   essentialsCollectibles, essentialsStagStations, essentialsWorldInteractions,
+ *   essentialsBosses, achievementsCollectibles, achievementsMaps,
+ *   achievementsWorldInteractions, achievementsBosses.
+ *
+ * Each backing section renders its own C.sectionHeader (title = section.h2,
+ * subtitle = shortText(description), count = countRuleA) followed by a
+ * two-column grid of C.listRow entries. Counter entries (amount + max/amountTotal)
+ * show "amount / total" as row meta and are complete when amount >= total.
+ */
+
+
+/* Sub-section render order + the glyph used for its rows. */
+
+var SECTIONS = [{
+  key: "essentialsCollectibles",
+  icon: "diamond"
+}, {
+  key: "essentialsStagStations",
+  icon: "train"
+}, {
+  key: "essentialsWorldInteractions",
+  icon: "touch_app"
+}, {
+  key: "essentialsBosses",
+  icon: "swords"
+}, {
+  key: "achievementsCollectibles",
+  icon: "military_tech"
+}, {
+  key: "achievementsMaps",
+  icon: "map"
+}, {
+  key: "achievementsWorldInteractions",
+  icon: "handshake"
+}, {
+  key: "achievementsBosses",
+  icon: "skull"
+}];
+/* A counter entry carries a numeric target via max or amountTotal. */
+
+function counterTotal(entry) {
+  if (entry == null) return null;
+  if (Number.isFinite(entry.amountTotal)) return entry.amountTotal;
+  if (Number.isFinite(entry.max)) return entry.max;
+  return null;
+}
+/* Complete flag for a row: counters compare amount>=total, else rule A. */
+
+
+function rowComplete(entry, total) {
+  if (total != null) {
+    var amount = Number.isFinite(entry.amount) ? entry.amount : 0;
+    return amount >= total;
+  }
+
+  return (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry);
+}
+
+function renderEntry(entry, sectionIcon) {
+  if (!entry) return "";
+  var total = counterTotal(entry);
+  var complete = rowComplete(entry, total);
+  var meta = "";
+
+  if (total != null) {
+    var amount = Number.isFinite(entry.amount) ? entry.amount : 0;
+    meta = "".concat(amount, " / ").concat(total);
+  }
+
+  var statusLabel = total != null ? "" : complete ? "Done" : "Missing";
+  return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.listRow({
+    icon: sectionIcon,
+    name: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml)(entry.name || "Unknown"),
+    meta: meta,
+    statusLabel: statusLabel,
+    complete: complete,
+    spoiler: entry.spoiler || "",
+    wiki: entry.wiki || "",
+    spoilerHtml: true
+  });
+}
+
+function renderSection(section, sectionIcon) {
+  if (!section || !section.entries) return "";
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var header = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Essentials",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description, 110),
+    done: done,
+    total: total
+  });
+  var rows = [];
+  var entries = section.entries;
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry || entry.disabled === true) continue;
+    rows.push(renderEntry(entry, sectionIcon));
+  }
+
+  var body = rows.length ? "<div class=\"grid grid-cols-1 md:grid-cols-2 gap-md\">".concat(rows.join(""), "</div>") : _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("No entries in this section.");
+  return "<div class=\"mb-section-gap\">".concat(header).concat(body, "</div>");
+}
+
+function render(db) {
+  if (!db || !db.sections) {
+    return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Load your save file to begin");
+  }
+
+  var present = SECTIONS.filter(function (s) {
+    return db.sections[s.key];
+  });
+
+  if (present.length === 0) {
+    return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Essentials data unavailable.");
+  }
+
+  var overall = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections)(db, present.map(function (s) {
+    return s.key;
+  }));
+  var intro = "<div class=\"mb-section-gap\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: "Essentials & Achievements",
+    subtitle: "Collectibles, stations, interactions and bosses required for full 112% and every achievement.",
+    done: overall.done,
+    total: overall.total
+  }) + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.progressBar(overall.total ? overall.done / overall.total * 100 : 0, "amber") + "</div>";
+  var blocks = present.map(function (s) {
+    return renderSection(db.sections[s.key], s.icon);
+  }).join(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.fleurDivider());
+  return intro + blocks;
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/geo.js":
+/*!*******************************!*\
+  !*** ./src/js/screens/geo.js ***!
+  \*******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * geo.js — "Geo Caches" screen (composite: geoChests + geoRocks).
+ *
+ * Two sub-sections, each with its own C.sectionHeader (Rule A count) so the
+ * on-screen counts sum to the sidebar badge. Geo amounts live inside entry.name
+ * (there is no entry.amount), so meta stays empty. geoRocks is large (207
+ * entries) — render it as a compact 2-col grid of C.listRow on md+ to keep the
+ * DOM manageable and the layout scannable.
+ */
+
+
+void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections;
+void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml;
+/**
+ * Render one backing section: header + rows. `grid` picks a compact 2-col grid
+ * (for the 207 Geo Rocks) instead of the default single-column stack.
+ * @param {object} section db.sections[key] (or falsy)
+ * @param {boolean} grid
+ * @returns {string}
+ */
+
+function renderGeoSection(section, grid) {
+  if (!section) return "";
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Geo",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  var wrapClass = grid ? "<div class=\"grid grid-cols-1 md:grid-cols-2 gap-sm mb-lg\">" : "<div class=\"space-y-sm mb-lg\">";
+  html += wrapClass;
+  var entries = section.entries || {};
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry) continue;
+    html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.listRow({
+      name: entry.name != null ? String(entry.name) : key,
+      spoiler: entry.spoiler != null ? String(entry.spoiler) : "",
+      wiki: entry.wiki || "",
+      complete: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry),
+      spoilerHtml: true,
+      meta: entry.amount != null ? String(entry.amount) : ""
+    });
+  }
+
+  html += "</div>";
+  return html;
+}
+
+function render(db) {
+  var sections = db && db.sections ? db.sections : {};
+  var html = "";
+  html += renderGeoSection(sections.geoChests, false);
+  html += renderGeoSection(sections.geoRocks, true);
+  if (!html) return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState();
+  return html;
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/lore.js":
+/*!********************************!*\
+  !*** ./src/js/screens/lore.js ***!
+  \********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+/**
+ * screens/lore.js — COMPOSITE "Lore & Relics" screen renderer.
+ *
+ * Backing sections (each rendered with its OWN C.sectionHeader so the on-screen
+ * per-section counts sum to the sidebar badge):
+ *   relicsWanderersJournal, relicsHallownestSeal, relicsKingsIdol,
+ *   relicsArcaneEgg  → per-entry relic icon-cards (icon tile + name + found/lost
+ *                       state + entry.spoiler location).
+ *   whisperingRoots  → C.listRow list rows (essence meta when available).
+ *
+ * AUTHORING CONTRACT: every Tailwind class is a COMPLETE static string literal;
+ * the only runtime-computed value would be an inline style width (none here).
+ * Every per-entry element carries the .single-entry + completed-item/
+ * incomplete-item + spoiler/.wiki blur contract (via C.listRow for rows and a
+ * hand-rolled replica for the relic cards).
+ */
+
+
+void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections;
+void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml;
+/* Per relic-type presentation (rarity theme from mk-lore.md). Icon-tile/glyph
+   class strings are pre-baked FULL literals per found/lost state so nothing is
+   interpolated into a class name. */
+
+var RELIC_TYPES = [{
+  key: "relicsWanderersJournal",
+  icon: "book",
+  rarity: "Abundant",
+  rarityClass: "font-caption text-caption text-success-green",
+  tileFound: "w-12 h-12 rounded bg-surface-container-lowest border border-success-green/40 flex items-center justify-center shrink-0 shadow-glow",
+  glyphFound: "text-success-green text-2xl"
+}, {
+  key: "relicsHallownestSeal",
+  icon: "verified",
+  rarity: "Uncommon",
+  rarityClass: "font-caption text-caption text-primary",
+  tileFound: "w-12 h-12 rounded bg-surface-container-lowest border border-border-bright/40 flex items-center justify-center shrink-0 shadow-glow",
+  glyphFound: "text-primary text-2xl"
+}, {
+  key: "relicsKingsIdol",
+  icon: "account_balance",
+  rarity: "Rare",
+  rarityClass: "font-caption text-caption text-secondary-container",
+  tileFound: "w-12 h-12 rounded bg-surface-container-lowest border border-secondary-container/50 flex items-center justify-center shrink-0 shadow-glow",
+  glyphFound: "text-secondary-container text-2xl"
+}, {
+  key: "relicsArcaneEgg",
+  icon: "egg",
+  rarity: "Mythic",
+  rarityClass: "font-caption text-caption text-danger-scarlet",
+  tileFound: "w-12 h-12 rounded bg-surface-container-lowest border border-danger-scarlet/50 flex items-center justify-center shrink-0 shadow-glow",
+  glyphFound: "text-danger-scarlet text-2xl"
+}];
+var TILE_MISSING = "w-12 h-12 rounded bg-surface-container/40 border border-border-dim flex items-center justify-center shrink-0 opacity-60";
+var GLYPH_MISSING = "text-outline text-2xl";
+var CARD_FOUND = "single-entry completed-item bg-surface-container/85 backdrop-blur-md border border-border-dim border-t-2 border-t-success-green/30 rounded-lg p-md flex flex-col gap-sm hover:bg-surface-container-high transition-colors relative overflow-hidden";
+var CARD_MISSING = "single-entry incomplete-item bg-surface-container/40 backdrop-blur-md border border-border-dim rounded-lg p-md flex flex-col gap-sm opacity-70 relative overflow-hidden";
+/** Name link + spoiler span honoring the blur contract (replica of the shared helper). */
+
+function nameSpoiler(entry, complete) {
+  var name = entry && entry.name != null ? String(entry.name) : "";
+  var nameHtml;
+
+  if (entry && entry.wiki) {
+    var linkClass = complete ? "wiki" : "wiki spoiler-red blurred";
+    nameHtml = "<a class=\"".concat(linkClass, "\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(entry.wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>");
+  } else {
+    nameHtml = "<b>".concat(name, "</b>");
+  }
+
+  var spoilerHtml = "";
+
+  if (entry && entry.spoiler) {
+    var spanClass = complete ? "spoiler-span-green" : "spoiler-span blurred";
+    spoilerHtml = "<span class=\"".concat(spanClass, "\"><span class=\"spoiler-text\">").concat(entry.spoiler, "</span></span>");
+  }
+
+  return {
+    nameHtml: nameHtml,
+    spoilerHtml: spoilerHtml
+  };
+}
+/** One relic icon-card carrying the full single-entry/spoiler contract. */
+
+
+function relicCard(entry, type) {
+  var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry);
+
+  var _nameSpoiler = nameSpoiler(entry, complete),
+      nameHtml = _nameSpoiler.nameHtml,
+      spoilerHtml = _nameSpoiler.spoilerHtml;
+
+  var cardClass = complete ? CARD_FOUND : CARD_MISSING;
+  var tileClass = complete ? type.tileFound : TILE_MISSING;
+  var glyphClass = complete ? type.glyphFound : GLYPH_MISSING;
+  var tile = "<div class=\"".concat(tileClass, "\">") + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(type.icon, complete ? 1 : 0, glyphClass) + "</div>";
+  var status = complete ? _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.statusBadge("Recovered", "complete") : _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.statusBadge("Lost", "locked");
+  var rarity = "<span class=\"".concat(type.rarityClass, "\">").concat(type.rarity, "</span>");
+  var locationHtml = spoilerHtml ? "<p class=\"font-caption text-caption text-lichen-blue\">".concat(spoilerHtml, "</p>") : "";
+  return "<div class=\"".concat(cardClass, "\">") + "<div class=\"flex items-start gap-md\">" + tile + "<div class=\"flex-grow min-w-0\">" + "<h4 class=\"font-body-bold text-on-surface\">".concat(nameHtml, "</h4>") + rarity + "</div>" + "<div class=\"shrink-0\">".concat(status, "</div>") + "</div>" + locationHtml + "</div>";
+}
+/** Render one relic sub-section: its own header + a 2-col grid of relic cards. */
+
+
+function relicSection(section, type) {
+  if (!section) return "";
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var html = "<div class=\"mb-section-gap\">";
+  html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Relics",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  var entries = section.entries || {};
+  var keys = Object.keys(entries);
+
+  if (!keys.length) {
+    html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("No relics of this kind recorded.");
+    html += "</div>";
+    return html;
+  }
+
+  html += "<div class=\"grid grid-cols-1 md:grid-cols-2 gap-md\">";
+
+  for (var _i = 0, _keys = keys; _i < _keys.length; _i++) {
+    var key = _keys[_i];
+    var entry = entries[key];
+    if (!entry) continue;
+    html += relicCard(entry, type);
+  }
+
+  html += "</div></div>";
+  return html;
+}
+/** Whispering Roots sub-section: header + list rows with essence meta. */
+
+
+function rootsSection(section) {
+  if (!section) return "";
+
+  var _countRuleA2 = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA2.done,
+      total = _countRuleA2.total;
+
+  var html = "<div class=\"mb-section-gap\">";
+  html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Whispering Roots",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  var entries = section.entries || {};
+  var keys = Object.keys(entries);
+
+  if (!keys.length) {
+    html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("No Whispering Roots recorded.");
+    html += "</div>";
+    return html;
+  }
+
+  html += "<div class=\"space-y-sm\">";
+
+  for (var _i2 = 0, _keys2 = keys; _i2 < _keys2.length; _i2++) {
+    var key = _keys2[_i2];
+    var entry = entries[key];
+    if (!entry) continue;
+    var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry); // Essence meta: prefer an explicit amount, else pull ": NN Orbs" from the name.
+
+    var meta = "";
+
+    if (entry.amount != null) {
+      meta = "".concat(entry.amount, " Essence");
+    } else if (typeof entry.name === "string") {
+      var m = entry.name.match(/(\d+)\s*Orbs/i);
+      if (m) meta = "".concat(m[1], " Essence");
+    }
+
+    html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.listRow({
+      icon: "park",
+      name: entry.name != null ? String(entry.name) : key,
+      meta: meta,
+      statusLabel: complete ? "Attuned" : "Dormant",
+      complete: complete,
+      spoiler: entry.spoiler != null ? String(entry.spoiler) : "",
+      wiki: entry.wiki || "",
+      spoilerHtml: true
+    });
+  }
+
+  html += "</div></div>";
+  return html;
+}
+/**
+ * @param {object} db the HK singleton
+ * @returns {string} inner content HTML (no <section>/shell wrapper)
+ */
+
+
+function render(db) {
+  var sections = db && db.sections ? db.sections : {};
+  var html = "";
+
+  var _iterator = _createForOfIteratorHelper(RELIC_TYPES),
+      _step;
+
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var type = _step.value;
+      html += relicSection(sections[type.key], type);
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+
+  html += rootsSection(sections.whisperingRoots);
+  if (!html) html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Load your save file to reveal the relics of Hallownest.");
+  return html;
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/masks.js":
+/*!*********************************!*\
+  !*** ./src/js/screens/masks.js ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * screens/masks.js — Knight's Ledger "Masks" screen.
+ *
+ * Backing section: db.sections.maskShards (16 Mask Shards; 4 per full Mask).
+ * Renders the abstract fragment-cell grid (grid-cols-4) from the
+ * masks_soul_vessels standardized layout: collected cells glow with an accent
+ * dot; empty cells are dim. Header counts via countRuleA; a progress bar and a
+ * "= N full Masks" caption summarize the health payoff.
+ *
+ * The caller wraps this INNER string in
+ *   <section class="ledger-screen" data-screen="masks"><div class="mb-section-gap">…</div></section>
+ * so we emit no shell/nav/section wrapper.
+ */
+
+
+var SHARDS_PER_MASK = 4;
+/**
+ * One fragment cell. Carries the full spoiler/filter class contract so the
+ * global Spoilers / Incomplete-Only toggles keep working on abstract cells.
+ */
+
+function shardCell(entry) {
+  var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry);
+  var name = entry && entry.name ? entry.name : "Mask Shard";
+  var label = extractLabel(name);
+  var spoiler = entry && entry.spoiler ? entry.spoiler : "";
+  var wiki = entry && entry.wiki ? entry.wiki : "";
+  var cellClass = complete ? "single-entry completed-item aspect-square bg-surface-glow border border-tertiary-container rounded flex flex-col items-center justify-center gap-1 p-unit text-center relative shadow-[0_0_10px_rgba(0,83,71,0.5)] transition-colors" : "single-entry incomplete-item aspect-square bg-surface-container border border-border-dim rounded flex flex-col items-center justify-center gap-1 p-unit text-center relative transition-colors";
+  var dot = complete ? "<span class=\"w-2 h-2 bg-tertiary-container rounded-full blur-[1px]\"></span>" : "<span class=\"w-2 h-2 bg-surface-container-highest rounded-full\"></span>";
+  var nameHtml = wiki ? "<a class=\"wiki".concat(complete ? "" : " spoiler-red blurred", " font-code-path text-caption leading-none\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(label, "</a>") : "<b class=\"font-code-path text-caption leading-none\">".concat(label, "</b>");
+  var spoilerHtml = spoiler ? " <span class=\"".concat(complete ? "spoiler-span-green" : "spoiler-span blurred", " block font-caption text-[11px] leading-tight text-lichen-blue\"><span class=\"spoiler-text\">").concat(spoiler, "</span></span>") : "";
+  return "<div class=\"".concat(cellClass, "\">") + dot + nameHtml + spoilerHtml + "</div>";
+}
+/** "Mask Shard #7" -> "#7"; falls back to the whole name. */
+
+
+function extractLabel(name) {
+  var m = String(name).match(/#\s*\d+/);
+  return m ? m[0].replace(/\s+/, "") : name;
+}
+
+function render(db) {
+  var section = db && db.sections ? db.sections.maskShards : null;
+
+  if (!section || !section.entries) {
+    return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Mask Shard data unavailable");
+  }
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var pct = total ? done / total * 100 : 0;
+  var fullMasks = Math.floor(done / SHARDS_PER_MASK);
+  var header = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Mask Shards",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  var cells = Object.keys(section.entries).map(function (k) {
+    return section.entries[k];
+  }).filter(function (e) {
+    return e && e.disabled !== true;
+  }).map(shardCell).join("");
+  var grid = "<div class=\"grid grid-cols-4 gap-unit mb-md\">".concat(cells, "</div>");
+  var bar = "<div class=\"mt-md\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.progressBar(pct, "teal") + "<div class=\"mt-2 flex justify-between items-center\">" + "<span class=\"font-caption text-caption text-lichen-blue\">".concat(done, " of ").concat(total, " shards</span>") + "<span class=\"font-code-path text-code-path text-tertiary-container\">= ".concat(fullMasks, " full Masks</span>") + "</div>" + "</div>";
+  return "<div class=\"bg-surface/85 backdrop-blur-sm border border-border-dim p-md rounded relative overflow-hidden\">" + header + grid + bar + "</div>";
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/nailarts.js":
+/*!************************************!*\
+  !*** ./src/js/screens/nailarts.js ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * screens/nailarts.js — "Nail Arts & Upgrades" COMPOSITE bespoke renderer.
+ *
+ * Backs TWO sections so the on-screen counts sum to the sidebar badge:
+ *   - db.sections.nailUpgrades (5): Old -> Sharpened -> Channeled -> Coiled ->
+ *     Pure Nail, rendered as a progressive tier ladder (owned tiers filled,
+ *     MAX highlight on Pure Nail).
+ *   - db.sections.nailArts (3): Great Slash / Dash Slash / Cyclone Slash,
+ *     rendered as a bento card grid (Cyclone Slash the wide feature card).
+ * Each section gets its own C.sectionHeader({... done, total}) via countRuleA.
+ * Every tier row / art card carries the .single-entry spoiler/blur contract.
+ */
+
+
+/* -------------------------------------------------------------------------- */
+
+/* Nail Refinement — upgrade ladder                                           */
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * One nail-upgrade tier row. Visual intensity climbs base -> owned -> MAX.
+ * @param {object} entry   db entry (may be undefined)
+ * @param {string} key     entry key (fallback name)
+ * @param {number} index   0-based tier position
+ * @param {number} count   total tiers (for the progress-fill width)
+ * @param {boolean} isLast Pure Nail (MAX) tier
+ * @returns {string}
+ */
+
+function upgradeRow(entry, key, index, count, isLast) {
+  var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry);
+  var isMax = complete && isLast;
+  var name = entry && entry.name != null ? String(entry.name) : key;
+  var wiki = entry && entry.wiki ? entry.wiki : "";
+  var spoiler = entry && entry.spoiler != null ? String(entry.spoiler) : "";
+  var width = count > 0 ? Math.round((index + 1) / count * 100) : 0;
+  var stateToken = complete ? "single-entry completed-item" : "single-entry incomplete-item";
+  var rowShell = isMax ? "flex items-center p-sm rounded-lg bg-surface-container-high border border-secondary-container shadow-glow-active group transition-colors" : "flex items-center p-sm rounded-lg hover:bg-surface-container-high group transition-colors";
+  var tile;
+
+  if (isMax) {
+    tile = "<div class=\"w-12 h-12 rounded-lg bg-secondary-container/10 border border-secondary-container flex items-center justify-center mr-md relative overflow-hidden shrink-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym("swords", 1, "text-secondary-container relative z-10") + "<div class=\"absolute inset-0 bg-gradient-to-tr from-secondary-container/20 to-transparent\"></div>" + "</div>";
+  } else if (complete) {
+    tile = "<div class=\"w-12 h-12 rounded-lg bg-surface-glow border border-secondary-container/30 flex items-center justify-center mr-md shadow-glow shrink-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym("swords", 1, "text-primary") + "</div>";
+  } else {
+    tile = "<div class=\"w-12 h-12 rounded-lg bg-surface border border-border-dim flex items-center justify-center mr-md shrink-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym("swords", 0, "text-outline") + "</div>";
+  }
+
+  var linkClass = complete ? "wiki" : "wiki spoiler-red blurred";
+  var nameHtml = wiki ? "<a class=\"".concat(linkClass, "\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>") : "<b>".concat(name, "</b>");
+  var titleClass = isMax ? "font-body-bold text-body-bold text-secondary-container" : complete ? "font-body-bold text-body-bold text-primary" : "font-body-bold text-body-bold text-on-surface-variant";
+  var tierLabel;
+  if (!complete) tierLabel = "[LOCKED]";else if (isLast) tierLabel = "[MAX]";else if (index === 0) tierLabel = "[BASE]";else tierLabel = "[OWNED]";
+  var tierLabelClass = isMax ? "font-code-path text-code-path text-secondary-container badge-glow" : complete ? "font-code-path text-code-path text-lichen-blue" : "font-code-path text-code-path text-outline";
+  var fillClass = isMax ? "h-full bg-gradient-to-r from-secondary-container to-secondary progress-bar-glow" : complete ? "h-full bg-primary shadow-glow" : "h-full bg-outline";
+  var spoilerSpan = complete ? "spoiler-span-green" : "spoiler-span blurred";
+  var spoilerHtml = spoiler ? "<p class=\"font-caption text-caption text-lichen-blue mt-xs\"><span class=\"".concat(spoilerSpan, "\"><span class=\"spoiler-text\">").concat(spoiler, "</span></span></p>") : "";
+  return "<div class=\"".concat(stateToken, " ").concat(rowShell, "\">") + tile + "<div class=\"flex-1 min-w-0\">" + "<div class=\"flex justify-between items-baseline mb-xs gap-md\">" + "<h4 class=\"".concat(titleClass, "\">").concat(nameHtml, "</h4>") + "<span class=\"".concat(tierLabelClass, " shrink-0\">").concat(tierLabel, "</span>") + "</div>" + "<div class=\"h-2 w-full bg-surface-container-high rounded-full overflow-hidden\">" + "<div class=\"".concat(fillClass, "\" style=\"width:").concat(width, "%\"></div>") + "</div>" + spoilerHtml + "</div>" + "</div>";
+}
+/**
+ * The Nail Refinement panel: section header + a glass panel of tier rows.
+ * @param {object} section db.sections.nailUpgrades
+ * @returns {string}
+ */
+
+
+function renderUpgrades(section) {
+  var entries = section.entries || {};
+  var keys = Object.keys(entries).filter(function (k) {
+    return entries[k];
+  });
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Nail Upgrades",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  html += "<div class=\"bg-surface-container-low/85 backdrop-blur-xl border border-border-dim rounded-lg p-lg shadow-glow relative overflow-hidden mb-lg\">" + "<div class=\"space-y-md relative z-10\">";
+  keys.forEach(function (key, i) {
+    html += upgradeRow(entries[key], key, i, keys.length, i === keys.length - 1);
+  });
+  html += "</div></div>";
+  return html;
+}
+/* -------------------------------------------------------------------------- */
+
+/* The Nailmasters' Arts — bento cards                                        */
+
+/* -------------------------------------------------------------------------- */
+
+/** Icon + wide flag per db.sections.nailArts entry key. */
+
+
+var ART_META = {
+  hasDashSlash: {
+    icon: "water_drop"
+  },
+  hasUpwardSlash: {
+    icon: "fast_forward"
+  },
+  hasCyclone: {
+    icon: "palette",
+    wide: true
+  }
+};
+/**
+ * One nail-art bento card. Wide (feature) cards use the amber accent; standard
+ * cards the teal accent. Dim + locked when not yet learned.
+ * @param {object} entry
+ * @param {string} key
+ * @returns {string}
+ */
+
+function artCard(entry, key) {
+  var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry);
+  var meta = ART_META[key] || {
+    icon: "cyclone"
+  };
+  var wide = meta.wide === true;
+  var spanClass = wide ? "md:col-span-2" : "";
+  var name = entry && entry.name != null ? String(entry.name) : key;
+  var wiki = entry && entry.wiki ? entry.wiki : "";
+  var spoiler = entry && entry.spoiler != null ? String(entry.spoiler) : "";
+  var cardBase = complete ? wide ? "single-entry completed-item bg-surface-container-low/85 backdrop-blur-xl border border-border-dim border-t-2 border-t-secondary-container/40 p-md rounded-lg relative overflow-hidden group flex flex-col hover:shadow-glow-active transition-all duration-300" : "single-entry completed-item bg-surface-container-low/85 backdrop-blur-xl border border-border-dim border-t-2 border-t-tertiary-container/40 p-md rounded-lg relative overflow-hidden group flex flex-col hover:shadow-glow-active transition-all duration-300" : "single-entry incomplete-item bg-surface-container/40 backdrop-blur-xl border border-border-dim p-md rounded-lg relative overflow-hidden group flex flex-col opacity-80";
+  var cardClass = "".concat(cardBase, " ").concat(spanClass); // Amber watermark on the wide feature card when learned.
+
+  var watermark = complete && wide ? "<span class=\"material-symbols-outlined absolute -right-4 -top-4 text-8xl text-secondary-container/5 rotate-45 pointer-events-none\" style=\"font-variation-settings:'FILL' 1;\">cyclone</span>" : ""; // Icon circle.
+
+  var iconCircle;
+
+  if (!complete) {
+    iconCircle = "<div class=\"w-10 h-10 rounded-full bg-surface-dim border border-border-dim flex items-center justify-center shrink-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(meta.icon, 0, "text-outline") + "</div>";
+  } else if (wide) {
+    iconCircle = "<div class=\"w-10 h-10 rounded-full bg-surface-dim border border-secondary-container/40 flex items-center justify-center shrink-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(meta.icon, 1, "text-secondary-container") + "</div>";
+  } else {
+    iconCircle = "<div class=\"w-10 h-10 rounded-full bg-surface-dim border border-tertiary-container/40 flex items-center justify-center shrink-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(meta.icon, 1, "text-tertiary-container") + "</div>";
+  } // Status badge (learned / locked).
+
+
+  var badge = complete ? wide ? "<span class=\"font-code-path text-code-path text-secondary-container bg-surface-glow px-xs py-xs rounded border border-secondary-container/30 shrink-0\">LEARNED</span>" : "<span class=\"font-code-path text-code-path text-tertiary-container bg-surface-glow px-xs py-xs rounded border border-tertiary-container/30 shrink-0\">LEARNED</span>" : "<span class=\"font-code-path text-code-path text-lichen-blue bg-surface-glow px-xs py-xs rounded border border-border-dim shrink-0\">LOCKED</span>"; // Title (wiki link + blur contract).
+
+  var linkClass = complete ? "wiki" : "wiki spoiler-red blurred";
+  var nameHtml = wiki ? "<a class=\"".concat(linkClass, "\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>") : "<b>".concat(name, "</b>");
+  var titleClass = complete ? "font-headline-md text-headline-md text-on-surface mb-xs relative z-10" : "font-headline-md text-headline-md text-outline mb-xs relative z-10 italic"; // Description (spoiler contract).
+
+  var spoilerSpan = complete ? "spoiler-span-green" : "spoiler-span blurred";
+  var descHtml = spoiler ? "<p class=\"font-caption text-caption text-lichen-blue flex-1 relative z-10\"><span class=\"".concat(spoilerSpan, "\"><span class=\"spoiler-text\">").concat(spoiler, "</span></span></p>") : "";
+  return "<div class=\"".concat(cardClass, "\">") + watermark + "<div class=\"flex justify-between items-start mb-md relative z-10\">".concat(iconCircle).concat(badge, "</div>") + "<h4 class=\"".concat(titleClass, "\">").concat(nameHtml, "</h4>") + descHtml + "</div>";
+}
+/**
+ * The Nailmasters' Arts bento grid: section header + card grid.
+ * @param {object} section db.sections.nailArts
+ * @returns {string}
+ */
+
+
+function renderArts(section) {
+  var entries = section.entries || {};
+
+  var _countRuleA2 = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA2.done,
+      total = _countRuleA2.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Nail Arts",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  html += "<div class=\"grid grid-cols-1 md:grid-cols-2 gap-lg\">";
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    if (!entries[key]) continue;
+    html += artCard(entries[key], key);
+  }
+
+  html += "</div>";
+  return html;
+}
+/* -------------------------------------------------------------------------- */
+
+/* Composite entry point                                                      */
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * @param {object} db
+ * @returns {string}
+ */
+
+
+function render(db) {
+  var sections = db && db.sections ? db.sections : null;
+  if (!sections) return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Load your save file to master the blade");
+  var upgrades = sections.nailUpgrades;
+  var arts = sections.nailArts;
+  if (!upgrades && !arts) return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Load your save file to master the blade");
+  var html = "";
+  if (upgrades) html += renderUpgrades(upgrades);
+  if (upgrades && arts) html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.fleurDivider();
+  if (arts) html += renderArts(arts);
+  void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections;
+  void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml;
+  return html;
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/pantheons.js":
+/*!*************************************!*\
+  !*** ./src/js/screens/pantheons.js ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * screens/pantheons.js — Godhome / The Pantheons (COMPOSITE screen).
+ *
+ * Backing db.sections (7): pantheonOfTheMaster, pantheonOfTheArtist,
+ * pantheonOfTheSage, pantheonOfTheKnight, pantheonOfHallownest (8 entries each),
+ * hallOfGods (176 = 44 bosses x 4 tiers) and godhomeStatistics (8).
+ *
+ * Layout:
+ *   (a) The Pantheons — 5 relic-border cards, each with a 4-binding icon row
+ *       (gavel/favorite/trip_origin/water_drop = Nail/Shell/Charms/Soul), a
+ *       COMPLETED/UNLOCKED/LOCKED status badge and a per-pantheon Rule-A pill.
+ *   (b) Hall of Gods — compact grid of boss cells; each boss shows 4 tier dots
+ *       (Unl/Att/Asc/Rad) and a highest-tier badge.
+ *   (c) Godhome Statistics — compact value/list rows.
+ *
+ * Every leaf entry carries the single-entry + completed-item/incomplete-item +
+ * spoiler-span + wiki contract so the global Spoilers / Incomplete-Only toggles
+ * keep working. All Tailwind classes are complete static string literals.
+ */
+
+
+/* -------------------------------------------------------------------------- */
+
+/* Static metadata                                                            */
+
+/* -------------------------------------------------------------------------- */
+
+var PANTHEON_ORDER = ["pantheonOfTheMaster", "pantheonOfTheArtist", "pantheonOfTheSage", "pantheonOfTheKnight", "pantheonOfHallownest"];
+/* Decorative watermark glyph + boss flavour caption per pantheon. */
+
+var PANTHEON_META = {
+  pantheonOfTheMaster: {
+    glyph: "person",
+    boss: "Oro & Mato"
+  },
+  pantheonOfTheArtist: {
+    glyph: "brush",
+    boss: "Paintmaster Sheo"
+  },
+  pantheonOfTheSage: {
+    glyph: "swords",
+    boss: "Great Nailsage Sly"
+  },
+  pantheonOfTheKnight: {
+    glyph: "shield",
+    boss: "Pure Vessel"
+  },
+  pantheonOfHallownest: {
+    glyph: "ac_unit",
+    boss: "Absolute Radiance"
+  }
+};
+/* The 4 bindings, in db entry order. `icon` is the runtime value the analyzer
+   stamps when the binding was completed (see HKCheckCompletion.CheckPantheon). */
+
+var BINDINGS = [{
+  key: "boundNail",
+  glyph: "gavel",
+  label: "Nail",
+  icon: "bindingNail"
+}, {
+  key: "boundShell",
+  glyph: "favorite",
+  label: "Shell",
+  icon: "bindingShell"
+}, {
+  key: "boundCharms",
+  glyph: "trip_origin",
+  label: "Charms",
+  icon: "bindingCharms"
+}, {
+  key: "boundSoul",
+  glyph: "water_drop",
+  label: "Soul",
+  icon: "bindingSoul"
+}];
+/* The 4 non-binding pantheon entries, in db entry order, with a header glyph. */
+
+var EXTRAS = [{
+  key: "unlocked",
+  glyph: "lock_open"
+}, {
+  key: "completed",
+  glyph: "verified"
+}, {
+  key: "allBindings",
+  glyph: "workspace_premium"
+}, {
+  key: "noHits",
+  glyph: "shield"
+}];
+/* Hall of Gods tier resolution (entry.check -> label/code + the runtime icon
+   value that marks that tier "achieved"). */
+
+var HOG_TIERS = [{
+  check: "isUnlocked",
+  label: "Unlocked",
+  code: "UNL",
+  doneIcon: "green"
+}, {
+  check: "completedTier1",
+  label: "Attuned",
+  code: "ATT",
+  doneIcon: "attuned"
+}, {
+  check: "completedTier2",
+  label: "Ascended",
+  code: "ASC",
+  doneIcon: "ascended"
+}, {
+  check: "completedTier3",
+  label: "Radiant",
+  code: "RAD",
+  doneIcon: "radiant"
+}];
+/* -------------------------------------------------------------------------- */
+
+/* Contract helpers (replicate listRow's spoiler/blur markup for grid cells)  */
+
+/* -------------------------------------------------------------------------- */
+
+function wikiName(entry, complete, extraCls) {
+  var name = entry && entry.name != null ? (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml)(String(entry.name)) : "";
+
+  if (entry && entry.wiki) {
+    var cls = complete ? "wiki ".concat(extraCls) : "wiki spoiler-red blurred ".concat(extraCls);
+    return "<a class=\"".concat(cls, "\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(entry.wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>");
+  }
+
+  return "<b class=\"".concat(extraCls, "\">").concat(name, "</b>");
+}
+
+function spoilerSpan(entry, complete, extraCls) {
+  if (!entry || !entry.spoiler) return "";
+  var cls = complete ? "spoiler-span-green ".concat(extraCls) : "spoiler-span blurred ".concat(extraCls); // Spoiler text is raw HTML (descriptions legitimately contain <b>/<span>).
+
+  return "<span class=\"".concat(cls, "\"><span class=\"spoiler-text\">").concat(entry.spoiler, "</span></span>");
+}
+/* -------------------------------------------------------------------------- */
+
+/* (a) Pantheon cards                                                         */
+
+/* -------------------------------------------------------------------------- */
+
+
+var BINDING_ACTIVE = "single-entry flex flex-col items-center gap-xs p-xs rounded-lg bg-surface-glow border border-secondary-container/30";
+var BINDING_INACTIVE = "single-entry flex flex-col items-center gap-xs p-xs rounded-lg bg-surface-container/40 border border-border-dim";
+var MINI_ENTRY = "single-entry flex items-center gap-sm px-sm py-xs rounded-lg bg-surface-container/60 border border-border-dim min-w-0";
+
+function bindingIcon(entry, meta) {
+  var active = !!(entry && entry.icon === meta.icon); // precise: ignores disabled/none
+
+  var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry); // filter class (disabled counts as complete)
+
+  var filterCls = complete ? "completed-item" : "incomplete-item";
+  var visualCls = active ? BINDING_ACTIVE : BINDING_INACTIVE;
+  var glyph = active ? _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(meta.glyph, 1, "text-secondary-container badge-glow text-2xl") : _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(meta.glyph, 0, "text-outline-variant text-2xl");
+  var title = entry && entry.name != null ? (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml)(String(entry.name)) : meta.label;
+  return "<div class=\"".concat(filterCls, " ").concat(visualCls, "\" title=\"").concat(title, "\">") + glyph + wikiName(entry, active, "font-label-sm text-label-sm") + "<span class=\"hidden\">".concat(spoilerSpan(entry, active, ""), "</span>") + "</div>";
+}
+
+function miniEntry(entry, glyph) {
+  var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry);
+  var filterCls = complete ? "completed-item" : "incomplete-item";
+  var glyphHtml = complete ? _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(glyph, 1, "text-secondary-container text-lg shrink-0") : _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(glyph, 0, "text-outline-variant text-lg shrink-0");
+  return "<div class=\"".concat(filterCls, " ").concat(MINI_ENTRY, "\">") + glyphHtml + "<div class=\"flex-grow min-w-0 leading-tight\">" + wikiName(entry, complete, "font-body-bold text-sm") + spoilerSpan(entry, complete, "font-caption text-caption text-lichen-blue") + "</div>" + "</div>";
+}
+
+function pantheonCard(section, meta) {
+  var entries = section && section.entries || {};
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var cardComplete = total > 0 && done === total;
+  var completedDone = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entries.completed);
+  var unlockedDone = entries.unlocked && entries.unlocked.icon === "green";
+  var statusLabel;
+  var statusKind;
+
+  if (completedDone) {
+    statusLabel = "COMPLETED";
+    statusKind = "complete";
+  } else if (unlockedDone) {
+    statusLabel = "UNLOCKED";
+    statusKind = "locked";
+  } else {
+    statusLabel = "LOCKED";
+    statusKind = "locked";
+  }
+
+  var cardCls = cardComplete ? "relic-border card-glow shadow-glow rounded-xl p-md backdrop-blur-md flex flex-col relative overflow-hidden group" : "relic-border card-glow rounded-xl p-md backdrop-blur-md flex flex-col relative overflow-hidden group";
+  var watermark = "<div class=\"absolute -right-6 -top-6 text-[120px] opacity-5 text-secondary-container group-hover:opacity-10 transition-opacity pointer-events-none z-0\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(meta.glyph, 1, "") + "</div>";
+  var header = "<div class=\"mb-md z-10\">" + "<h3 class=\"font-headline-md text-headline-md text-on-surface leading-tight break-words\">".concat((0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml)(section.h2 || ""), "</h3>") + "<p class=\"font-caption text-caption text-lichen-blue mt-xs\">".concat((0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml)(meta.boss), " \u2014 ").concat((0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml)((0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description, 60)), "</p>") + "<div class=\"flex items-center flex-wrap gap-xs mt-sm\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.statusBadge(statusLabel, statusKind) + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.pill(done, total) + "</div>" + "</div>";
+  var bindingRow = "<div class=\"z-10 border-t border-border-dim pt-sm mb-md\">" + "<p class=\"font-label-sm text-label-sm text-on-surface-variant mb-sm\">Bindings</p>" + "<div class=\"grid grid-cols-4 gap-sm\">" + BINDINGS.map(function (b) {
+    return bindingIcon(entries[b.key], b);
+  }).join("") + "</div>" + "</div>";
+  var extras = "<div class=\"z-10 grid grid-cols-1 sm:grid-cols-2 gap-sm\">" + EXTRAS.map(function (e) {
+    return miniEntry(entries[e.key], e.glyph);
+  }).join("") + "</div>";
+  return "<div class=\"".concat(cardCls, "\">").concat(watermark).concat(header).concat(bindingRow).concat(extras, "</div>");
+}
+/* -------------------------------------------------------------------------- */
+
+/* (b) Hall of Gods                                                           */
+
+/* -------------------------------------------------------------------------- */
+
+
+var DOT_DONE = "bg-surface-glow border border-secondary-container/40 text-secondary-container";
+var DOT_SEEN = "bg-surface-container border border-border-dim text-lichen-blue";
+var DOT_LOCKED = "bg-surface-container/40 border border-border-dim text-outline-variant";
+var DOT_DISABLED = "bg-surface-container/20 border border-border-dim text-outline-variant opacity-40";
+
+function tierDot(entry, tier) {
+  var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry);
+  var filterCls = complete ? "completed-item" : "incomplete-item";
+  var stateCls;
+  if (!entry || entry.disabled === true) stateCls = DOT_DISABLED;else if (entry.icon === tier.doneIcon) stateCls = DOT_DONE;else if (entry.icon === "partial") stateCls = DOT_SEEN;else stateCls = DOT_LOCKED;
+  var title = entry && entry.name != null ? (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml)(String(entry.name)) : tier.label;
+  return "<div class=\"single-entry ".concat(filterCls, " flex flex-col items-center justify-center py-xs rounded ").concat(stateCls, "\" title=\"").concat(title, "\">") + "<span class=\"font-code-path text-[10px] leading-none\">".concat(tier.code, "</span>") + "<span class=\"hidden\">".concat(wikiName(entry, complete, "")).concat(spoilerSpan(entry, complete, ""), "</span>") + "</div>";
+}
+
+function bossCell(boss) {
+  // Highest achieved tier -> header badge (precise icon match, ignores disabled).
+  var badgeLabel = "LOCKED";
+  var badgeKind = "locked";
+
+  for (var i = HOG_TIERS.length - 1; i >= 0; i--) {
+    var t = HOG_TIERS[i];
+    var e = boss.tiers[t.check];
+
+    if (e && e.icon === t.doneIcon) {
+      badgeLabel = t.label.toUpperCase();
+      badgeKind = "complete";
+      break;
+    }
+  }
+
+  var unlockedEntry = boss.tiers.isUnlocked;
+  var seen = !!(unlockedEntry && unlockedEntry.icon === "green");
+  var nameCls = seen ? "wiki font-body-bold text-sm truncate" : "wiki spoiler-red blurred font-body-bold text-sm truncate";
+  var nameHtml = boss.wiki ? "<a class=\"".concat(nameCls, "\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(boss.wiki, "\" target=\"_blank\" rel=\"noopener\">").concat((0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml)(boss.name), "</a>") : "<b class=\"font-body-bold text-sm truncate\">".concat((0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml)(boss.name), "</b>");
+  var dots = HOG_TIERS.map(function (t) {
+    return tierDot(boss.tiers[t.check], t);
+  }).join("");
+  return "<div class=\"rounded-lg border border-border-dim bg-surface-container/60 backdrop-blur-md p-sm flex flex-col gap-sm\">" + "<div class=\"flex items-center justify-between gap-sm\">" + "<div class=\"min-w-0\">".concat(nameHtml, "</div>") + "<div class=\"shrink-0\">".concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.statusBadge(badgeLabel, badgeKind), "</div>") + "</div>" + "<div class=\"grid grid-cols-4 gap-xs\">".concat(dots, "</div>") + "</div>";
+}
+
+function renderHallOfGods(section) {
+  var entries = section && section.entries || {}; // Group the 176 entries into 44 bosses by entry.id, preserving first-seen order.
+
+  var order = [];
+  var byId = {};
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry) continue;
+    var id = entry.id || key;
+
+    if (!byId[id]) {
+      byId[id] = {
+        id: id,
+        name: String(entry.name != null ? entry.name : id).split(":")[0].trim(),
+        wiki: entry.wiki || "",
+        tiers: {}
+      };
+      order.push(id);
+    }
+
+    var check = entry.check || "isUnlocked";
+    byId[id].tiers[check] = entry; // Prefer the "Unlocked" entry for the boss display name (cleanest label).
+
+    if (check === "isUnlocked" && entry.name != null) {
+      byId[id].name = String(entry.name).split(":")[0].trim();
+    }
+  }
+
+  var _countRuleA2 = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA2.done,
+      total = _countRuleA2.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Hall of Gods",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+
+  if (!order.length) {
+    return html + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("No statues recorded yet");
+  }
+
+  html += "<div class=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md\">";
+  html += order.map(function (id) {
+    return bossCell(byId[id]);
+  }).join("");
+  html += "</div>";
+  return html;
+}
+/* -------------------------------------------------------------------------- */
+
+/* (c) Godhome Statistics                                                     */
+
+/* -------------------------------------------------------------------------- */
+
+
+function statRow(entry, key) {
+  var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry);
+  return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.listRow({
+    name: entry && entry.name != null ? String(entry.name) : key,
+    spoiler: entry && entry.spoiler != null ? String(entry.spoiler) : "",
+    wiki: entry && entry.wiki || "",
+    complete: complete,
+    statusLabel: complete ? "DONE" : "PENDING",
+    spoilerHtml: true
+  });
+}
+
+function renderGodhomeStats(section) {
+  var entries = section && section.entries || {};
+
+  var _countRuleA3 = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA3.done,
+      total = _countRuleA3.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Godhome Statistics",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  html += "<div class=\"space-y-sm\">";
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry) continue;
+    html += statRow(entry, key);
+  }
+
+  html += "</div>";
+  return html;
+}
+/* -------------------------------------------------------------------------- */
+
+/* Entry point                                                                */
+
+/* -------------------------------------------------------------------------- */
+
+
+function render(db) {
+  var sections = db && db.sections ? db.sections : {}; // Intro hero header (mockup eyebrow + display title + subtitle).
+
+  var html = "<header class=\"text-center mb-xl\">" + "<p class=\"font-code-path text-code-path text-tertiary mb-sm tracking-widest uppercase opacity-80\">Godhome Resonance</p>" + "<h2 class=\"font-display-lg text-display-lg text-secondary-container mb-sm relic-glow\">The Pantheons</h2>" + "<p class=\"font-body-base text-body-base text-lichen-blue max-w-container-max mx-auto\">Ascend through the memories of gods. Prove your mastery by embracing the bindings of the void.</p>" + "</header>";
+  /* (a) The Pantheons — 5 relic cards. Sub-total shown in the divider heading;
+     each card carries its own Rule-A pill so the on-screen counts sum. */
+
+  var pantheonSub = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections)(db, PANTHEON_ORDER);
+  html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.fleurDivider("The Pantheons  [".concat(pantheonSub.done, "/").concat(pantheonSub.total, "]"));
+  var cards = PANTHEON_ORDER.filter(function (k) {
+    return sections[k];
+  }).map(function (k) {
+    return pantheonCard(sections[k], PANTHEON_META[k] || {
+      glyph: "account_balance",
+      boss: ""
+    });
+  });
+
+  if (cards.length) {
+    html += "<div class=\"grid grid-cols-1 lg:grid-cols-2 gap-lg mb-section-gap\">".concat(cards.join(""), "</div>");
+  } else {
+    html += "<div class=\"mb-section-gap\">".concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("No Pantheon data"), "</div>");
+  }
+  /* (b) Hall of Gods. */
+
+
+  if (sections.hallOfGods) {
+    html += "<div class=\"mb-section-gap\">".concat(renderHallOfGods(sections.hallOfGods), "</div>");
+  }
+  /* (c) Godhome Statistics. */
+
+
+  if (sections.godhomeStatistics) {
+    html += renderGodhomeStats(sections.godhomeStatistics);
+  }
+
+  return html;
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/secrets.js":
+/*!***********************************!*\
+  !*** ./src/js/screens/secrets.js ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * secrets.js — "Secrets" screen (composite: worldInteractions + secretRooms +
+ * corniferNotes).
+ *
+ * Three sub-sections of C.listRow, each with its own C.sectionHeader (Rule A
+ * count) so the on-screen counts sum to the sidebar badge. Some entry names
+ * carry a "(missable)" suffix — kept verbatim.
+ */
+
+
+void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections;
+void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml;
+/**
+ * Render one backing section: header + a single-column stack of list rows.
+ * @param {object} section db.sections[key] (or falsy)
+ * @param {string} fallbackTitle
+ * @returns {string}
+ */
+
+function renderSecretSection(section, fallbackTitle) {
+  if (!section) return "";
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || fallbackTitle,
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  html += "<div class=\"space-y-sm mb-lg\">";
+  var entries = section.entries || {};
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry) continue;
+    html += _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.listRow({
+      name: entry.name != null ? String(entry.name) : key,
+      spoiler: entry.spoiler != null ? String(entry.spoiler) : "",
+      wiki: entry.wiki || "",
+      complete: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry),
+      spoilerHtml: true,
+      meta: entry.amount != null ? String(entry.amount) : ""
+    });
+  }
+
+  html += "</div>";
+  return html;
+}
+
+function render(db) {
+  var sections = db && db.sections ? db.sections : {};
+  var html = "";
+  html += renderSecretSection(sections.worldInteractions, "World Interactions");
+  html += renderSecretSection(sections.secretRooms, "Secret Rooms");
+  html += renderSecretSection(sections.corniferNotes, "Cornifer's Notes");
+  if (!html) return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState();
+  return html;
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/spells.js":
+/*!**********************************!*\
+  !*** ./src/js/screens/spells.js ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+/**
+ * screens/spells.js — "Ancient Spells" bespoke renderer.
+ *
+ * db.sections.spells has 6 entries: 3 base spells and their 3 upgrades.
+ * Rendered as 3 dual-tier split cards (base tier <-> upgrade/shadow tier):
+ *   Vengeful Spirit -> Shade Soul, Desolate Dive -> Descending Dark,
+ *   Howling Wraiths -> Abyss Shriek.
+ * Each tier is its own .single-entry element carrying the spoiler/blur contract.
+ * Header count via countRuleA(spells) so the on-screen pill matches the sidebar.
+ */
+
+
+/* The three spell lines, in display order, with a Material Symbol per tier. */
+
+var SPELL_PAIRS = [{
+  base: "vengefulSpirit",
+  up: "shadeSoul",
+  baseIcon: "auto_fix_high",
+  upIcon: "dark_mode"
+}, {
+  base: "desolateDive",
+  up: "descendingDark",
+  baseIcon: "keyboard_double_arrow_down",
+  upIcon: "keyboard_double_arrow_down"
+}, {
+  base: "howlingWraiths",
+  up: "abyssShriek",
+  baseIcon: "air",
+  upIcon: "waves"
+}];
+/**
+ * One tier (half) of a dual-tier spell card.
+ * @param {object} entry  db entry (may be undefined)
+ * @param {string} key    entry key (fallback name)
+ * @param {string} icon   Material Symbol ligature
+ * @param {"base"|"upgrade"} side
+ * @returns {string}
+ */
+
+function spellTier(entry, key, icon, side) {
+  var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry);
+  var name = entry && entry.name != null ? String(entry.name) : key;
+  var wiki = entry && entry.wiki ? entry.wiki : "";
+  var spoiler = entry && entry.spoiler != null ? String(entry.spoiler) : "";
+  var stateToken = complete ? "single-entry completed-item" : "single-entry incomplete-item";
+  var sideClass = side === "base" ? "p-lg flex-1 flex flex-col items-center justify-center text-center bg-gradient-to-br from-surface-container to-surface border-b sm:border-b-0 sm:border-r border-border-dim" : "p-lg flex-1 flex flex-col items-center justify-center text-center bg-surface-container-lowest relative";
+  var orb = complete ? "<div class=\"w-16 h-16 rounded-full border-2 border-secondary-container bg-surface-glow flex items-center justify-center mb-md shadow-glow group-hover:scale-110 transition-transform duration-300\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(icon, 1, "text-secondary-container text-3xl") + "</div>" : "<div class=\"w-16 h-16 rounded-full border border-border-dim bg-surface-container-lowest flex items-center justify-center mb-md opacity-70\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym(icon, 0, "text-outline-variant text-3xl") + "</div>";
+  var linkClass = complete ? "wiki" : "wiki spoiler-red blurred";
+  var nameHtml = wiki ? "<a class=\"".concat(linkClass, "\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(name, "</a>") : "<b>".concat(name, "</b>");
+  var titleClass = complete ? "font-headline-md text-headline-md text-on-surface mb-sm" : "font-headline-md text-headline-md text-outline-variant mb-sm";
+  var spanClass = complete ? "spoiler-span-green" : "spoiler-span blurred";
+  var descClass = complete ? "font-body-base text-caption text-lichen-blue mb-md" : "font-body-base text-caption text-outline/60 mb-md";
+  var descHtml = spoiler ? "<p class=\"".concat(descClass, "\"><span class=\"").concat(spanClass, "\"><span class=\"spoiler-text\">").concat(spoiler, "</span></span></p>") : "";
+  var status = complete ? "<div class=\"mt-auto flex items-center gap-2\">" + "<div class=\"w-3 h-3 rounded-full bg-success-green shadow-[0_0_8px_#16c60c]\"></div>" + "<span class=\"font-label-sm text-label-sm text-success-green uppercase tracking-wider\">Acquired</span>" + "</div>" : "<div class=\"mt-auto flex items-center gap-2\">" + "<div class=\"w-3 h-3 rounded-sm border border-outline-variant bg-surface-container-lowest\"></div>" + "<span class=\"font-label-sm text-label-sm text-outline-variant uppercase tracking-wider\">Undiscovered</span>" + "</div>";
+  return "<div class=\"".concat(stateToken, " ").concat(sideClass, "\">") + orb + "<h3 class=\"".concat(titleClass, "\">").concat(nameHtml, "</h3>") + descHtml + status + "</div>";
+}
+/**
+ * @param {object} db
+ * @returns {string}
+ */
+
+
+function render(db) {
+  var section = db && db.sections ? db.sections.spells : null;
+  if (!section) return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Load your save file to reveal the ancient spells");
+  var entries = section.entries || {};
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var html = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Spells",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  html += "<div class=\"grid grid-cols-1 gap-lg\">";
+
+  var _iterator = _createForOfIteratorHelper(SPELL_PAIRS),
+      _step;
+
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var pair = _step.value;
+      var baseEntry = entries[pair.base];
+      var upEntry = entries[pair.up];
+      html += "<article class=\"bg-surface/80 backdrop-blur-md rounded-xl border border-border-dim overflow-hidden group transition-all duration-300 hover:border-border-bright\">" + "<div class=\"flex flex-col sm:flex-row h-full\">" + spellTier(baseEntry, pair.base, pair.baseIcon, "base") + spellTier(upEntry, pair.up, pair.upIcon, "upgrade") + "</div>" + "</article>";
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+
+  html += "</div>"; // Reference countSections/escapeHtml to keep the shared util surface consistent.
+
+  void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countSections;
+  void _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml;
+  return html;
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/statistics.js":
+/*!**************************************!*\
+  !*** ./src/js/screens/statistics.js ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * statistics.js — Knight's Ledger "Game Statistics" screen.
+ *
+ * db.sections.statistics — ~18 pure numeric stats with NO completion state.
+ * These never contribute to completion, never blur, and never carry
+ * completed-item/incomplete-item classes. Rendered as a clean grid of stat
+ * tiles (name + value). itemsDiscovered is a three-part value.
+ */
+
+
+/* Format a numeric stat value; null/undefined -> em dash placeholder. */
+
+function fmt(n) {
+  if (n == null || !Number.isFinite(Number(n))) return "—";
+  return Number(n).toLocaleString("en-US");
+}
+/* Non-blurred wiki link (or plain bold) for the tile name. */
+
+
+function nameHtml(entry) {
+  var label = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.escapeHtml)(entry.name || "Statistic");
+
+  if (entry.wiki) {
+    return "<a class=\"wiki\" href=\"".concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(entry.wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(label, "</a>");
+  }
+
+  return "<b>".concat(label, "</b>");
+}
+/* The big value block for a tile. itemsDiscovered renders three sub-values. */
+
+
+function valueHtml(key, entry) {
+  if (key === "itemsDiscovered") {
+    var parts = [{
+      v: entry.notActivated,
+      l: "Not A."
+    }, {
+      v: entry.activated,
+      l: "Activated"
+    }, {
+      v: entry.discoveredTotal,
+      l: "Discovered"
+    }];
+    return "<div class=\"flex items-end gap-md\">" + parts.map(function (p) {
+      return "<div class=\"text-center\">" + "<span class=\"font-display-lg text-headline-md text-gradient-pale-ore block leading-none\">".concat(fmt(p.v), "</span>") + "<span class=\"font-caption text-caption text-outline\">".concat(p.l, "</span>") + "</div>";
+    }).join("<span class=\"text-outline self-center\">/</span>") + "</div>";
+  }
+
+  var total = Number.isFinite(entry.amountTotal) ? entry.amountTotal : Number.isFinite(entry.max) ? entry.max : null;
+  var value = fmt(entry.amount);
+  var suffix = total != null ? " <span class=\"font-body-base text-lg text-outline\">/ ".concat(fmt(total), "</span>") : "";
+  return "<span class=\"font-display-lg text-display-lg text-gradient-pale-ore leading-none\">".concat(value, "</span>").concat(suffix);
+}
+
+function tile(key, entry) {
+  if (!entry) return "";
+  var subtitle = entry.spoiler ? "<p class=\"font-caption text-caption text-lichen-blue mt-xs\">".concat(entry.spoiler, "</p>") : "";
+  return "<div class=\"single-entry bg-surface-container border border-border-dim border-t-2 border-t-secondary-container/30 rounded-lg p-md flex flex-col justify-between gap-md min-h-[7rem]\">" + "<div class=\"flex items-center gap-sm\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sym("query_stats", 0, "text-primary text-xl shrink-0") + "<h4 class=\"font-body-bold text-on-surface\">".concat(nameHtml(entry), "</h4>") + "</div>" + "<div>".concat(valueHtml(key, entry)).concat(subtitle, "</div>") + "</div>";
+}
+
+function render(db) {
+  if (!db || !db.sections) {
+    return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Load your save file to begin");
+  }
+
+  var section = db.sections.statistics;
+
+  if (!section || !section.entries) {
+    return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Statistics data unavailable.");
+  }
+
+  var header = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Game Statistics",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description, 140)
+  });
+  var tiles = [];
+  var entries = section.entries;
+
+  for (var key in entries) {
+    if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+    var entry = entries[key];
+    if (!entry) continue;
+    tiles.push(tile(key, entry));
+  }
+
+  var body = tiles.length ? "<div class=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md\">".concat(tiles.join(""), "</div>") : _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("No statistics recorded.");
+  return "<div class=\"mb-section-gap\">".concat(header).concat(body, "</div>");
+}
+
+/***/ }),
+
+/***/ "./src/js/screens/vessels.js":
+/*!***********************************!*\
+  !*** ./src/js/screens/vessels.js ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "render": () => (/* binding */ render)
+/* harmony export */ });
+/* harmony import */ var _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ledger-components.js */ "./src/js/ledger-components.js");
+/* harmony import */ var _ledger_util_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ledger-util.js */ "./src/js/ledger-util.js");
+/**
+ * screens/vessels.js — Knight's Ledger "Vessels" screen.
+ *
+ * Backing section: db.sections.vesselFragments (9 Vessel Fragments; 3 per full
+ * Soul Vessel). Mirrors the Masks screen but uses a grid-cols-3 fragment grid,
+ * an amber accent dot, and a "= N full Soul Vessels" caption (N = floor(done/3)).
+ *
+ * The caller wraps this INNER string in
+ *   <section class="ledger-screen" data-screen="vessels"><div class="mb-section-gap">…</div></section>
+ * so we emit no shell/nav/section wrapper.
+ */
+
+
+var FRAGMENTS_PER_VESSEL = 3;
+/**
+ * One fragment cell. Carries the full spoiler/filter class contract so the
+ * global Spoilers / Incomplete-Only toggles keep working on abstract cells.
+ */
+
+function fragmentCell(entry) {
+  var complete = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.isEntryComplete)(entry);
+  var name = entry && entry.name ? entry.name : "Vessel Fragment";
+  var label = extractLabel(name);
+  var spoiler = entry && entry.spoiler ? entry.spoiler : "";
+  var wiki = entry && entry.wiki ? entry.wiki : "";
+  var cellClass = complete ? "single-entry completed-item aspect-[4/3] bg-surface-glow border border-tertiary-container rounded flex flex-col items-center justify-center gap-1 p-unit text-center relative shadow-[0_0_10px_rgba(254,187,0,0.25)] transition-colors" : "single-entry incomplete-item aspect-[4/3] bg-surface-container border border-border-dim rounded flex flex-col items-center justify-center gap-1 p-unit text-center relative transition-colors";
+  var dot = complete ? "<span class=\"w-3 h-1 bg-secondary-container rounded-full blur-[1px]\"></span>" : "<span class=\"w-3 h-1 bg-surface-container-highest rounded-full\"></span>";
+  var nameHtml = wiki ? "<a class=\"wiki".concat(complete ? "" : " spoiler-red blurred", " font-code-path text-caption leading-none\" href=\"").concat(_ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.WIKI).concat(wiki, "\" target=\"_blank\" rel=\"noopener\">").concat(label, "</a>") : "<b class=\"font-code-path text-caption leading-none\">".concat(label, "</b>");
+  var spoilerHtml = spoiler ? " <span class=\"".concat(complete ? "spoiler-span-green" : "spoiler-span blurred", " block font-caption text-[11px] leading-tight text-lichen-blue\"><span class=\"spoiler-text\">").concat(spoiler, "</span></span>") : "";
+  return "<div class=\"".concat(cellClass, "\">") + dot + nameHtml + spoilerHtml + "</div>";
+}
+/** "Vessel Fragment #7" -> "#7"; falls back to the whole name. */
+
+
+function extractLabel(name) {
+  var m = String(name).match(/#\s*\d+/);
+  return m ? m[0].replace(/\s+/, "") : name;
+}
+
+function render(db) {
+  var section = db && db.sections ? db.sections.vesselFragments : null;
+
+  if (!section || !section.entries) {
+    return _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.emptyState("Vessel Fragment data unavailable");
+  }
+
+  var _countRuleA = (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.countRuleA)(section),
+      done = _countRuleA.done,
+      total = _countRuleA.total;
+
+  var pct = total ? done / total * 100 : 0;
+  var fullVessels = Math.floor(done / FRAGMENTS_PER_VESSEL);
+  var header = _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.sectionHeader({
+    title: section.h2 || "Vessel Fragments",
+    subtitle: (0,_ledger_util_js__WEBPACK_IMPORTED_MODULE_1__.shortText)(section.description),
+    done: done,
+    total: total
+  });
+  var cells = Object.keys(section.entries).map(function (k) {
+    return section.entries[k];
+  }).filter(function (e) {
+    return e && e.disabled !== true;
+  }).map(fragmentCell).join("");
+  var grid = "<div class=\"grid grid-cols-3 gap-unit mb-md\">".concat(cells, "</div>");
+  var bar = "<div class=\"mt-md\">" + _ledger_components_js__WEBPACK_IMPORTED_MODULE_0__.progressBar(pct, "amber") + "<div class=\"mt-2 flex justify-between items-center\">" + "<span class=\"font-caption text-caption text-lichen-blue\">".concat(done, " of ").concat(total, " fragments</span>") + "<span class=\"font-code-path text-code-path text-secondary-container\">= ".concat(fullVessels, " full Soul Vessels</span>") + "</div>" + "</div>";
+  return "<div class=\"bg-surface/85 backdrop-blur-sm border border-border-dim p-md rounded relative overflow-hidden\">" + header + grid + bar + "</div>";
+}
 
 /***/ }),
 
@@ -33493,6 +36418,19 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./src/css/tailwind.css":
+/*!******************************!*\
+  !*** ./src/css/tailwind.css ***!
+  \******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+// extracted by mini-css-extract-plugin
+
+
+/***/ }),
+
 /***/ "./node_modules/regenerator-runtime/runtime.js":
 /*!*****************************************************!*\
   !*** ./node_modules/regenerator-runtime/runtime.js ***!
@@ -35527,6 +38465,10 @@ __webpack_require__.r(__webpack_exports__);
 // require("./cookies.js");
 // CSS
 // require("../css/cookieconsent.css");
+// Tailwind (base/components/utilities) loaded FIRST so the trimmed legacy
+// style.css still wins the cascade for the controls/classes it deliberately keeps.
+__webpack_require__(/*! ../css/tailwind.css */ "./src/css/tailwind.css");
+
 __webpack_require__(/*! ../css/fontello.css */ "./src/css/fontello.css");
 
 __webpack_require__(/*! ../css/simpleicon.css */ "./src/css/simpleicon.css");

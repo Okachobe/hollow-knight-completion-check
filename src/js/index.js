@@ -3,6 +3,9 @@
 
 // CSS
 // require("../css/cookieconsent.css");
+// Tailwind (base/components/utilities) loaded FIRST so the trimmed legacy
+// style.css still wins the cascade for the controls/classes it deliberately keeps.
+require("../css/tailwind.css");
 require("../css/fontello.css");
 require("../css/simpleicon.css");
 require("../css/reznoricon.css");

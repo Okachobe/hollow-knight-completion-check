@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   Knight's Ledger — custom component classes
+   Hand-written (never purged). Pulled verbatim from the Stitch mockups' <style>
+   blocks and DESIGN-MAP §3. These back the ".relic" glass/tactile treatments that
+   Tailwind utilities can't express (border-image gradients, inner glows, clipped
+   gradient text, ambient pulses).
+   ========================================================================= */
+
+/* Amber inner-glow on the internal progress-bar fill */
+.progress-bar-glow {
+  box-shadow: 0 0 10px rgba(254, 187, 0, 0.6);
+}
+
+/* Card lift: 1px amber inset ring + soft outer amber bloom on hover */
+.card-glow {
+  transition: box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+.card-glow:hover {
+  box-shadow: inset 0 0 0 1px rgba(254, 187, 0, 0.3), 0 0 20px rgba(254, 187, 0, 0.15);
+}
+
+/* Pale-ore gradient clipped to text (hero completion figure) */
+.text-gradient-pale-ore {
+  background: linear-gradient(135deg, #ffdea3 0%, #febb00 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* 2px framed "relic" border using a multi-stop amber gradient */
+.relic-border {
+  border: 2px solid transparent;
+  border-image: linear-gradient(to right, #412d00, #febb00, #412d00) 1;
+}
+
+/* Monospace badge that appears to glow from within the page */
+.badge-glow {
+  text-shadow: 0 0 8px rgba(254, 187, 0, 0.8), 0 0 12px rgba(255, 255, 255, 0.5);
+}
+
+/* Luminous headline (lichen-blue bloom) */
+.relic-glow {
+  text-shadow: 0 0 12px rgba(160, 203, 240, 0.35);
+}
+
+/* Fleur divider — center glyph flanked by 1px lines, without closing off space */
+.fleur-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fleur-divider::before,
+.fleur-divider::after {
+  content: "";
+  height: 1px;
+  width: 4rem;
+  background: #183c55; /* border-dim */
+  margin: 0 16px;
+}
+
+/* Slow ambient pulse for idle glyphs (hive, soul orbs) */
+.pulse-ambient {
+  animation: kl-pulse-ambient 3.2s ease-in-out infinite;
+}
+@keyframes kl-pulse-ambient {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* Dark cavern scrollbar for nav / long lists */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #183c55; /* border-dim */
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #5e8dac; /* border-bright */
+}
+
+/* Collapsible <summary> — hide the native disclosure marker (we render a chevron glyph). */
+summary {
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Active state for filter chips (toggled by JS so it works for the sidebar AND the
+   mobile chips, which point at the same checkbox but aren't peer siblings). */
+.filter-chip.is-active {
+  background-color: #febb00; /* secondary-container */
+  border-color: #febb00;
+  color: #412d00; /* on-secondary */
+}
+.filter-chip.is-active .material-symbols-outlined {
+  color: #412d00;
+}

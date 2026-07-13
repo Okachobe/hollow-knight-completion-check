@@ -24,14 +24,15 @@
 }
 
 html {
-  font-size: 17px;
+  /* 16px so Tailwind's rem-based type/spacing scale is exact (was 17px). */
+  font-size: 16px;
   font-weight: 300;
 }
 
 body {
   font-family: 'Heebo', sans-serif;
-  color: #fff;
-  background-color: #050d19;
+  /* Colour + background are now owned by the Tailwind body classes
+     (bg-surface text-on-background). Keep only layout-neutral defaults. */
   margin: 0;
   overflow: auto;
 }
@@ -42,45 +43,61 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #1e4d6c;
+  /* Retheme to the dark "Knight's Ledger" border-dim / border-bright palette. */
+  background-color: #183c55;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #2e5d7c;
+  background-color: #5e8dac;
 }
 
 ::-webkit-scrollbar-track,
 ::-webkit-scrollbar-track-piece {
-  background: url("../img/scrollbar-track.png") repeat-y !important;
+  background: #060e1b;
 }
 
 ::-webkit-resizer {
-  background-color: #050d19;
-  color: #1e4d6c;
+  background-color: #060e1b;
+  color: #183c55;
 }
 
+/* Ambient cavern layer: a deep, heavily-darkened subterranean image sitting
+   behind the translucent Tailwind cards. z-index:-1 so the full-viewport
+   shell + <main> own all real layout above it. */
 #background {
   position: fixed;
+  inset: 0;
   padding: 0;
   margin: 0;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
   background-image: url("../img/hk-background.jpg");
-  background-size: auto 100%;
+  background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
   background-attachment: fixed;
-  z-index: 1;
+  z-index: -1;
 }
 
+/* ~90% dark multiply-style overlay so the image only whispers through. */
+#background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 25%,
+    rgba(10, 20, 36, 0.82) 0%,
+    rgba(6, 14, 27, 0.97) 100%);
+}
+
+/* Legacy narrow centered column NEUTRALIZED — the Tailwind shell + <main>
+   now own layout. Do not constrain width or center, and drop the z-index
+   stacking that fought the new fixed cavern layer. */
 #content {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 0 .6rem;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 0;
   position: relative;
-  z-index: 1000;
 }
 
 b {
@@ -538,8 +555,15 @@ a.button:hover {
   text-shadow: none;
 }
 
-a.wiki {
+a.wiki,
+a.wiki:active,
+a.wiki:visited {
   font-weight: 500;
+  color: #aac7d4; /* lichen-blue, readable on the dark cavern */
+}
+
+a.wiki:hover {
+  color: #cbe6ff; /* primary-fixed */
 }
 
 .link-social {
@@ -662,12 +686,21 @@ a.wiki {
   transform: rotate(45deg);
 }
 
-.hidden {
-  display: none;
-}
+/* NOTE: the legacy ".hidden { display:none }" was removed. Tailwind already provides
+   its own .hidden utility; keeping a duplicate here (style.css loads AFTER tailwind.css)
+   overrode responsive display variants like "hidden md:flex" on the sidebar, forcing it
+   to stay display:none on desktop. Let Tailwind own .hidden so md:flex / md:hidden work. */
 
 .visible-block {
   display: block;
+}
+
+/* On mobile the injected cookie banner (#CookieAlert, fixed bottom, z-index 1110) sits
+   on top of the bottom nav — lift it above the ~64px nav bar so both are usable. */
+@media (max-width: 767px) {
+  #CookieAlert {
+    bottom: 64px !important;
+  }
 }
 
 .opacity-none {
@@ -678,23 +711,32 @@ a.wiki {
   opacity: 1;
 }
 
+/* Scarlet spoiler text (renderer adds "spoiler-red blurred").
+   Declared BEFORE .blurred so the frosted overlay wins while hidden;
+   reads scarlet once .blurred is removed (spoilers revealed). */
+.spoiler-red {
+  color: #f03a17;
+}
+
 .wiki.blurred {
   color: #0000;
   background-color: #cfffed2d;
+  filter: blur(4px);
+  -webkit-filter: blur(4px);
   transition: all 0.3s ease;
 }
 
 .blurred {
   color: #0000;
   background-color: #ffffff1f;
-/*   filter: blur(5px);
-  -webkit-filter: blur(5px); */
+  filter: blur(4px);
+  -webkit-filter: blur(4px);
   transition: all 0.3s ease;
 }
 
 .blurred:hover {
-  /* filter: none;
-  -webkit-filter: none; */
+  filter: none;
+  -webkit-filter: none;
   color: inherit;
   background-color: inherit;
 }

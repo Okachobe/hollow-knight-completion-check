@@ -2,41 +2,33 @@ import {
   LoadSaveFile
 } from "./LoadSaveFile.js";
 
-/* ------------------------ Load image files (necessary for Webpack) ---------------------------------------------------------- */
+/* ------------------------ Knight's Ledger render layer ---------------------------------------------------------- */
+/* The engine (HKCheckCompletion) mutates the HK singleton, then calls GenerateInnerHTML(HK).
+   We build the sidebar/bottom-nav chrome once, render every screen into #generated, populate the
+   [x/y] badges (completion rule A), and route between screens. The decrypt/completion engine is untouched. */
 
-import HEALTH_MASK_IMAGE from "../img/health-mask.png";
-import HEALTH_MASK_STEEL_IMAGE from "../img/health-mask-steel.png";
-import SOUL_ORB_IMAGE from "../img/soul-orb.png";
-import NOTCH_IMAGE from "../img/notch.png";
-import NOTCH_FILLED_IMAGE from "../img/notch-filled.png";
-import NOTCH_OVERCHARMED_IMAGE from "../img/notch-overcharmed.png";
-import GEO_IMAGE from "../img/geo.png";
-import GEO_SHADE_IMAGE from "../img/geo-shade.png";
+import {
+  SCREENS,
+  renderAllScreens,
+  screenCount
+} from "./ledger-screens.js";
 
-/* ------------------------- Constants ---------------------------------------------------------------------------------------- */
+import {
+  navBadge
+} from "./ledger-components.js";
 
-// const DATA_UNKNOWN = "Data unknown";
-const SYMBOL_FALSE = "<i class='icon-cancel'></i>"; // "❌ "
-const SYMBOL_TRUE = "<i class='icon-ok-squared'></i>"; // "✅ "
-const SYMBOL_PARTIAL = "<i class='icon-ok-squared partial'></i>"; // "✔ "
-const SYMBOL_CLOCK = "<i class='icon-clock'></i>"; // "🕑 "
-const SYMBOL_FILE = "<i class='icon-doc-text-inv'></i>"; // "📁"
-const SYMBOL_BINDING_NAIL = "<i class='reznoricon-binding-nail'></i>"; // Nail Binding
-const SYMBOL_BINDING_SHELL = "<i class='reznoricon-binding-shell'></i>"; // Shell Binding
-const SYMBOL_BINDING_CHARMS = "<i class='reznoricon-binding-charms'></i>"; // Charm Binding
-const SYMBOL_BINDING_SOUL = "<i class='reznoricon-binding-soul'></i>"; // Soul Binding
-const SYMBOL_BINDING_ALL = "<i class='reznoricon-binding-all'></i>"; // All Bindings
-const SYMBOL_ATTUNED = "<i class='reznoricon-attuned'></i>"; // Attuned
-const SYMBOL_ASCENDED = "<i class='reznoricon-ascended'></i>"; // Ascended
-const SYMBOL_RADIANT = "<i class='reznoricon-radiant'></i>"; // Radiant
-const SYMBOL_EMPTY = "<span class='padding-left'></span>"; // No symbol
-const FLEUR_DIVIDE = "<div class='horizontal-line'></div>";
-const WIKI_LINK = "https://hollowknight.fandom.com/wiki/";
+/* -------------------------- Constants --------------------------------------------------------------------------- */
 
 const ROOT = document.documentElement;
 const SCROLL_BUTTON = document.querySelector(".scroll-up-button");
+const SYMBOL_FILE = "<span class='material-symbols-outlined text-sm align-middle'>description</span>";
 
-/* -------------------------- Variables --------------------------------------------------------------------------------------- */
+/* Active sidebar/bottom nav-link styling (literal classes so Tailwind keeps them) */
+const NAV_ACTIVE_CLASSES = ["bg-surface-container-high", "text-on-surface"];
+
+/* -------------------------- State --------------------------------------------------------------------------------- */
+
+let chromeBuilt = false;
 
 let benchmarkTimes = {
   LoadSaveFile: {
@@ -110,6 +102,8 @@ function HideElement(element) {
 
 function TogglePageScrollElement(root, element, ratio) {
 
+  if (!element) return;
+
   /* Maximum number of pixels that can be scrolled by the user */
   let scrollTotal = root.scrollHeight - root.clientHeight;
 
@@ -123,920 +117,168 @@ function TogglePageScrollElement(root, element, ratio) {
 }
 
 
-/* ################################### Optimized Functions ########################################################################## */
-
-
-function GenerateInnerHTML(db) {
-
-  // start benchmarking
-  benchmarkTimes.GenerateInnerHTML.timeStart = performance.now();
-
-  let sections = db.sections;
-
-  /* console.log(sections); */
-
-  let entries = {};
-  let obj = {
-    icon: "",
-    iconClass: "",
-    textPrefix: "",
-    textSuffix: "",
-    wiki: "",
-    div: `<div class='single-entry'>`,
-    b: ["<b>", "</b>"],
-    p: "<span class='p-left-small'></span>",
-    span: ["", ""],
-    spoiler: ["", ""],
-    spoilerAfter: "",
-  };
-
-  let finalHTMLFill = "";
-  let textFill = "";
-
-  let Img = "";
-  let maskNormal = `<img src='${HEALTH_MASK_IMAGE}' class='health-mask' alt='health mask image' title='Health Mask'>`;
-  let maskSteel = `<img src='${HEALTH_MASK_STEEL_IMAGE}' class='health-mask' alt='steel health mask image' title='Steel Health Mask'>`;
-  let soulNormal = `<img src='${SOUL_ORB_IMAGE}' class='soul-orb' alt='soul orb image' title='Single Soul Orb (one spell cast)'>`;
-  let notchNormalImage = `<img src='${NOTCH_IMAGE}' class='notch' alt='notch image' title='Charm Notch (Free)'>`;
-  let notchFilledImage = `<img src='${NOTCH_FILLED_IMAGE}' class='notch' alt='notch image' title='Charm Notch (Used)'>`;
-  let notchOvercharmedImage = `<img src='${NOTCH_OVERCHARMED_IMAGE}' class='notch' alt='notch image' title='Charm Notch (Overcharmed)'>`;
-  let geoNormalImage = `<img src='${GEO_IMAGE}' class='geo-symbol' alt='geo symbol image' title='Geo'>`;
-  let geoShadeImage = `<img src='${GEO_SHADE_IMAGE}' class='geo-symbol' alt='shade geo symbol image' title='Shade Geo'>`;
-  let div = `<div class='single-entry'>`;
-  let divFlex = `<div class='flex-container align-center'>`;
-
-
-  /* ############################## create all main entries ########################################################################## */
-
-
-  for (let section in sections) {
-
-    textFill = "";
-
-    /* ############################# Tab Switch buttons and Large Section <div>s for switching ############################## */
-    /* Important: Ending Tab </div>s are at "End the Tab divs" */
-
-    switch (section) {
-
-      /* Main % */
-      case "bosses":
-
-        textFill += [
-          `<div class="tab-switch-buttons">`,
-          `<button id="button-switch-all" name="all" class="button tab-switch" type="button">All</button>`,
-          `<button id="button-switch-main" name="main" class="button tab-switch" type="button">Main %</button>`,
-          `<button id="button-switch-essentials" name="essentials" class="button tab-switch" type="button">Essentials %</button>`,
-          `<button id="button-switch-journal" name="journal" class="button tab-switch" type="button">Journal</button>`,
-          `<button id="button-switch-collectibles" name="collectibles" class="button tab-switch" type="button">Collectibles</button>`,
-          `<button id="button-switch-geocaches" name="geocaches" class="button tab-switch" type="button">Geo Caches</button>`,
-          `<button id="button-switch-secrets" name="secrets" class="button tab-switch" type="button">Secrets</button>`,
-          `<button id="button-switch-godhome" name="godhome" class="button tab-switch" type="button">Godmaster</button>`,
-          `<button id="button-switch-statistics" name="statistics" class="button tab-switch" type="button">Statistics</button>`,
-          `</div>`,
-        ].join("\n");
-
-        textFill += LargeSectionStart("tab-main", "Main", db);
-
-        break;
-
-      /* Essentials % */
-      case "essentialsCollectibles":
-
-        textFill += LargeSectionStart("tab-essentials", "Essentials", db);
-
-        break;
-
-      /* Journal */
-      case "huntersJournal":
-
-        textFill += LargeSectionStart("tab-journal", "Journal", db);
-
-        break;
-
-      /* Collectibles */
-      case "charmNotches":
-
-        textFill += LargeSectionStart("tab-collectibles", "Collectibles", db);
-
-        break;
-
-      /* Geo Caches */
-      case "geoChests":
-
-        textFill += LargeSectionStart("tab-geocaches", "Geo Caches", db);
-
-        break;
-
-      /* Secrets */
-      case "worldInteractions":
-
-        textFill += LargeSectionStart("tab-secrets", "Secrets", db);
-
-        break;
-
-      /* Statistics */
-      case "statistics":
-
-        textFill += LargeSectionStart("tab-statistics", "Statistics", db);
-
-        break;
-
-      /* Godmaster */
-      case "godhomeStatistics":
-
-        textFill += LargeSectionStart("tab-godhome", "Godmaster", db);
-
-        break;
-    }
-
-    entries = sections[section].entries;
-
-    /* ####################### Section div id start ########################## */
-
-    /* starts a new <div> with the current section id */
-    textFill += SectionStart(sections[section]);
-
-    /* creates a <h2> tag for the current section and fills with current%/max%
-    If the save file was not analyzed, then fill only max% on blue background */
-    if (db.saveAnalyzed === true) {
-      textFill += CompletionFill(sections[section]);
-    } else {
-      textFill += CompletionFillNoSave(sections[section]);
-    }
-
-
-    /* ######################## Different behaviour depending on the section ###################################################### */
-
-
-    switch (section) {
-
-      /* ############### Game Status (intro) ################ */
-
-      case "intro":
-
-        /* ############## Create each single entry (intro) ############### */
-
-        for (let entry in entries) {
-
-          obj.b = ["", ""];
-          obj.p = "<span class='p-left-small'></span>";
-          obj.span = ["<b>", "</b>"];
-          obj.div = div;
-
-          /* -------- Icons (next to each entry) --------- */
-          if (entries[entry].hasOwnProperty("icon")) {
-
-            switch (entries[entry].icon) {
-
-              case "clock":
-                obj.icon = SYMBOL_CLOCK;
-                break;
-              case "green":
-                obj.icon = SYMBOL_TRUE;
-                break;
-              case "partial":
-                obj.icon = SYMBOL_PARTIAL;
-                break;
-              case "revealed":
-                obj.icon = SYMBOL_EMPTY;
-                break;
-              case "red":
-                obj.icon = SYMBOL_FALSE;
-                break;
-              default:
-                obj.icon = SYMBOL_EMPTY;
-            }
-          } else {
-            obj.icon = SYMBOL_FALSE;
-          }
-
-          obj.textPrefix = entries[entry].name;
-          obj.textSuffix = entries[entry].spoiler;
-          obj.spoilerAfter = "";
-
-          /* Different text and images for each entry in the "Game Status" (intro) section */
-
-          switch (entry) {
-            case "gameCompletion":
-              obj.textSuffix = `${obj.textSuffix} %`;
-              obj.spoilerAfter = `</b> ${entries[entry].spoilerAfter}`;
-              obj.span[1] = "";
-
-              break;
-
-            case "gameCompletionExtended":
-              obj.spoilerAfter = `</b> ${entries[entry].spoilerAfter}`;
-              obj.span[1] = "";
-
-              break;
-
-            case "health":
-
-              /* ----------------- Horizontal Line after save version ---------------- */
-              textFill += FLEUR_DIVIDE;
-
-              obj.div = divFlex;
-              obj.span = ["", ""];
-
-              (entries[entry].permadeathMode) ? Img = maskSteel: Img = maskNormal;
-
-              for (let i = 0, total = entries[entry].amountTotal; i < total; i++) {
-                obj.textSuffix += Img;
-              }
-
-              obj.textSuffix += `${obj.p}<sup>(${entries[entry].amountTotal})</sup>`;
-
-              obj.p = "";
-              break;
-
-            case "soul":
-              obj.div = divFlex;
-              obj.span = ["", ""];
-              Img = soulNormal;
-
-              for (let i = 0, total = Math.round(entries[entry].amountTotal / 33); i < total; i++) {
-                obj.textSuffix += Img;
-              }
-
-              obj.textSuffix += `${obj.p}<sup>(${Math.round(entries[entry].amountTotal / 33)})</sup>`;
-
-              obj.p = "";
-              break;
-
-            case "notches":
-              obj.div = divFlex;
-              obj.span = ["", ""];
-
-              /* First, check filled (used) notches and fill them (skips if no filled notches) */
-              if (entries[entry].amountFilled > 0) {
-                for (let i = 0, total = entries[entry].amountFilled; i < total; i++) {
-                  obj.textSuffix += notchFilledImage;
-                }
-              }
-
-              /* Second, check overcharmed notches and fill them (skips if player is not overcharmed) */
-              if (entries[entry].amountOvercharmed > 0) {
-                for (let i = 0, total = entries[entry].amountOvercharmed; i < total; i++) {
-                  obj.textSuffix += notchOvercharmedImage;
-                }
-              }
-
-              /* Last, fill all unused notches */
-              if (entries[entry].amountUnused > 0) {
-                for (let i = 0, total = entries[entry].amountUnused; i < total; i++) {
-                  obj.textSuffix += notchNormalImage;
-                }
-              }
-
-              obj.textSuffix += `${obj.p}<sup>(${entries[entry].amountTotal})</sup>`;
-
-              break;
-
-            case "geo":
-              obj.div = divFlex;
-              obj.span = ["", ""];
-
-              obj.textSuffix += `${geoNormalImage}<b>${entries[entry].amount}</b>`;
-              // Show Shade Geo value and image only if Shade has at least 1 Geo on it
-              if (entries[entry].amountShade > 0) obj.textSuffix += `${obj.p}+${geoShadeImage}<b>${entries[entry].amountShade}</b>`;
-
-              // Show also total Geo (Geo + Shade Geo) if player has at least 1 geo alongside the shade geo
-              if (entries[entry].amount > 0 && entries[entry].amountShade > 0) {
-                obj.textSuffix += `${obj.p}=${obj.p}<b>${entries[entry].amountTotal}</b>`;
-              }
-
-              obj.p = "";
-              break;
-
-            default:
-          }
-
-          textFill += SingleEntryFill(obj);
-        }
-
-        break;
-
-        /* #################### Hints (hints) #################### */
-
-      case "hints":
-        obj.b = ["", ""];
-        obj.span = ["<span class='hint'>", "</span>"];
-        obj.icon = "";
-        obj.textPrefix = "";
-        obj.div = div;
-
-        /* display only one (current) hint */
-        obj.textSuffix = entries[sections[section].current].spoiler;
-
-        textFill += SingleEntryFill(obj);
-
-        break;
-
-      /* ######################### Create all other sections ################################################################## */
-
-      default:
-
-        /* ###################### Create section descriptions under each H2 title ##################### */
-
-        if (sections[section].hasOwnProperty("description")) {
-          textFill += SectionDescription(sections[section]);
-        }
-
-        /* ###################### Create each single entry (from all other sections) ##################### */
-
-        for (let entry in entries) {
-
-          /* obj.p = "<span class='p-left-small'></span>"; */
-          obj.p = "";
-          obj.span = ["<span class='spoiler-span blurred'>", "</span>"];
-          obj.spoiler = ["<span class='spoiler-text'>", "</span>"];
-          obj.div = div;
-          obj.textPrefix = entries[entry].name;
-          obj.textSuffix = `— ${entries[entry].spoiler}`;
-          obj.wiki = entries[entry].wiki;
-
-          /* -------- Icons (next to each entry) --------- */
-          if (entries[entry].hasOwnProperty("icon")) {
-
-            switch (entries[entry].icon) {
-
-              case "clock":
-                obj.icon = SYMBOL_CLOCK;
-                break;
-
-              case "green":
-                obj.icon = SYMBOL_TRUE;
-
-                /* -------- Prevents hiding as spoiler when a player has already completed the entry --------- */
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "partial":
-                obj.icon = SYMBOL_PARTIAL;
-                break;
-
-              case "revealed":
-                obj.icon = SYMBOL_EMPTY;
-                /* -------- Prevents textSuffix blurring when a player has already discovered the entry --------- */
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "partialJournal":
-                obj.icon = SYMBOL_PARTIAL;
-
-                /* -------- Prevents textSuffix blurring when a player has already discovered the entry --------- */
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-
-              case "bindingNail":
-                obj.icon = SYMBOL_BINDING_NAIL;
-
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-  
-              case "bindingShell":
-                obj.icon = SYMBOL_BINDING_SHELL;
-
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-  
-              case "bindingCharms":
-                obj.icon = SYMBOL_BINDING_CHARMS;
-
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-  
-              case "bindingSoul":
-                obj.icon = SYMBOL_BINDING_SOUL;
-
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-              
-              case "bindingAll":
-                obj.icon = SYMBOL_BINDING_ALL;
-
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-              
-              case "attuned":
-                obj.icon = SYMBOL_ATTUNED;
-
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-              
-              case "ascended":
-                obj.icon = SYMBOL_ASCENDED;
-
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-              
-              case "radiant":
-                obj.icon = SYMBOL_RADIANT;
-
-                /* -------- Prevents blurring when a player has already completed the entry --------- */
-                obj.span[0] = "<span class='spoiler-span-green'>";
-                break;
-              
-              case "red":
-                obj.icon = SYMBOL_FALSE;
-                break;
-
-              default:
-                obj.icon = SYMBOL_EMPTY;
-            }
-          } else {
-            if (section === "statistics") {
-              obj.icon = SYMBOL_EMPTY;
-            } else {
-              obj.icon = SYMBOL_FALSE;
-            }
-          }
-
-          /* assign the appropriate spoiler class name depending on the completion check (for blurring names) */
-          if (entries[entry].hasOwnProperty("icon")) {
-            switch (entries[entry].icon) {
-
-              case "red":
-              case "none":
-                obj.iconClass = " spoiler-red blurred";
-                break;
-
-              default:
-                /* -------- Prevents TextPrefix blurring when a player has already discovered the entry --------- */
-                obj.iconClass = "";
-            }
-          } else {
-            obj.iconClass = "";
-          }
-
-          obj.b = [`<a class="wiki${obj.iconClass}" href="${WIKI_LINK}${obj.wiki}" target="_blank">`, "</a>"];
-
-          if (entries[entry].hasOwnProperty("amount")) {
-            if (entries[entry].hasOwnProperty("disabled")) {
-              if (entries[entry].disabled !== true) {
-                obj.textPrefix += `: ${entries[entry].amount}`;
-              }
-            } else {
-              obj.textPrefix += `: ${entries[entry].amount}`;
-            }
-          }
-
-          if (entries[entry].hasOwnProperty("amountTotal")) {
-            obj.textPrefix += ` / ${entries[entry].amountTotal}`;
-          }
-
-          if (entries[entry].hasOwnProperty("id")) {
-
-            switch (entries[entry].id) {
-
-              case "geoRocks":
-              case "itemsDiscovered":
-                obj.textPrefix += `: ${entries[entry].notActivated} | ${entries[entry].activated} | ${entries[entry].discoveredTotal}`;
-
-                break;
-
-              default:
-            }
-          }
-
-          if (entries[entry].hasOwnProperty("disabled")) {
-            if (entries[entry].disabled === true) {
-              obj.textPrefix = `<del>${obj.textPrefix}</del>`;
-            }
-          }
-
-          let isEntryCompleted = false;
-          if (entries[entry].disabled === true) {
-            isEntryCompleted = true;
-          } else if (section === "statistics" && !entries[entry].hasOwnProperty("max")) {
-            // Pure statistics should never be hidden
-            isEntryCompleted = false;
-          } else {
-            let iconName = entries[entry].icon;
-            isEntryCompleted = (
-              iconName === "green" ||
-              iconName === "bindingNail" ||
-              iconName === "bindingShell" ||
-              iconName === "bindingCharms" ||
-              iconName === "bindingSoul" ||
-              iconName === "bindingAll" ||
-              iconName === "attuned" ||
-              iconName === "ascended" ||
-              iconName === "radiant" ||
-              iconName === "none"
-            );
-          }
-          let completedClass = isEntryCompleted ? " completed-item" : " incomplete-item";
-          obj.div = `<div class='single-entry${completedClass}'>`;
-
-          /* textFill += SingleEntryFill(section, entries[entry]); */
-          textFill += SingleEntryFill(obj);
-
-        } /* end for (let entry in entries) */
-    } /* end switch (section) - central */
-
-    /* ############# Cumulate all section texts into one variable for final HTML filling. End section div tag ############### */
-
-    finalHTMLFill += `${textFill}\n</div>\n\n`;
-
-    /* ################## End the Tab divs (must be after section ending div) ################# */
-
-    switch (section) {
-
-      /* ending the tabs */
-      case "godmaster": // Main %
-      case "achievementsBosses": // Essentials %
-      case "huntersJournalOptional": // Journal
-      case "items": // Collectibles
-      case "geoRocks": // Geo Caches
-      case "corniferNotes": // Secrets
-      case "statistics": // Statistics
-      case "hallOfGods": // Godmaster
-
-        finalHTMLFill += `</div>`;
-
-        break;
-
-    }
-
-  } /* end for (let section in sections) */
-
-  /* console.groupCollapsed("finalHTMLFill");
-  console.log(finalHTMLFill);
-  console.groupEnd(); */
-
-  /* ################################## Horizontal line ############################################################################# */
-
-  finalHTMLFill += FLEUR_DIVIDE;
-
-  /* --------------- Final single HTML access and fill here ------------------ */
-
-  document.getElementById("generated").innerHTML = finalHTMLFill;
-
-  /* make tab switch buttons working (on click) - must run after inner HTML generation is finished */
-
-  document.querySelectorAll(".tab-switch").forEach((button) => {
-
-    button.addEventListener("click", (e) => {
-      PageSwitchTab(e.target.name);
-    });
-  });
-
-  /* Check local storage first, and set the last selected Tab on the page (remembers last clicked tab) */
-
-  if (StorageAvailable('localStorage')) {
-
-    if (localStorage.getItem("hkTabActive")) {
-      PageSwitchTab(localStorage.getItem("hkTabActive"));
-    } else {
-      PageSwitchTab("main");
-    }
+/* ################################### Chrome + Router ########################################################## */
+
+/**
+ * Builds the sidebar nav list and mobile bottom nav from the SCREENS registry. Runs once.
+ */
+function BuildChrome() {
+
+  const navList = document.getElementById("ledger-nav-list");
+  const bottomNav = document.getElementById("ledger-bottom-nav");
+  if (!navList || !bottomNav) return;
+
+  let side = "";
+  let bottom = "";
+
+  for (let screen of SCREENS) {
+
+    side += [
+      `<li><a href="#" data-screen="${screen.id}" class="ledger-nav-link flex items-center gap-md px-md py-sm rounded-lg text-lichen-blue hover:bg-surface-container-high hover:text-on-surface transition-colors group">`,
+      `<span class="material-symbols-outlined group-hover:text-secondary-container transition-colors" style="font-variation-settings:'FILL' 0;">${screen.icon}</span>`,
+      `<span class="font-body-bold">${screen.label}</span>`,
+      `<span class="ml-auto" data-badge="${screen.id}"></span>`,
+      `</a></li>`
+    ].join("");
+
+    bottom += [
+      `<a href="#" data-screen="${screen.id}" class="ledger-nav-link flex flex-col items-center justify-center gap-1 px-sm py-xs rounded-xl text-lichen-blue transition-colors shrink-0 min-w-[64px]">`,
+      `<span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 0;">${screen.icon}</span>`,
+      `<span class="font-label-sm text-label-sm-mobile whitespace-nowrap">${screen.label}</span>`,
+      `</a>`
+    ].join("");
   }
 
-  // finish benchmarking
+  navList.innerHTML = side;
+  bottomNav.innerHTML = bottom;
+
+  navList.addEventListener("click", NavClickHandler);
+  bottomNav.addEventListener("click", NavClickHandler);
+
+  chromeBuilt = true;
+}
+
+function NavClickHandler(e) {
+  let link = e.target.closest(".ledger-nav-link");
+  if (!link) return;
+  e.preventDefault();
+  ShowScreen(link.getAttribute("data-screen"));
+}
+
+/**
+ * Highlights the active nav-link (both sidebar and bottom nav share the .ledger-nav-link class).
+ */
+function SetActiveNav(id) {
+  document.querySelectorAll(".ledger-nav-link").forEach((link) => {
+    let isActive = link.getAttribute("data-screen") === id;
+    for (let cls of NAV_ACTIVE_CLASSES) {
+      link.classList.toggle(cls, isActive);
+    }
+    link.classList.toggle("text-lichen-blue", !isActive);
+  });
+}
+
+/**
+ * Shows a single screen, hides the rest, updates the active nav-link, remembers the choice.
+ * @param {string} id screen id (data-screen)
+ */
+function ShowScreen(id) {
+
+  let screens = document.querySelectorAll(".ledger-screen");
+  let matched = false;
+
+  screens.forEach((s) => {
+    let isActive = s.getAttribute("data-screen") === id;
+    s.classList.toggle("hidden", !isActive);
+    if (isActive) matched = true;
+  });
+
+  /* Fall back to dashboard if the requested screen doesn't exist */
+  if (!matched && id !== "dashboard") {
+    ShowScreen("dashboard");
+    return;
+  }
+
+  SetActiveNav(id);
+
+  if (StorageAvailable("localStorage")) {
+    localStorage.setItem("hkLedgerScreen", id);
+  }
+
+  if (ROOT && ROOT.scrollTo) {
+    ROOT.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
+/**
+ * Fills every sidebar [data-badge] slot with a completion badge computed from the DB (rule A).
+ */
+function UpdateBadges(db) {
+  for (let screen of SCREENS) {
+    let slot = document.querySelector(`[data-badge="${screen.id}"]`);
+    if (!slot) continue;
+
+    /* Dashboard + Statistics carry no count badge */
+    if (screen.id === "dashboard" || screen.id === "statistics") {
+      slot.innerHTML = "";
+      continue;
+    }
+
+    let counts = screenCount(screen, db);
+    slot.innerHTML = navBadge(counts.done, counts.total);
+  }
+}
+
+
+/* ################################### Main render entry point ########################################################## */
+
+/**
+ * Builds the chrome (once), renders all screens into #generated, updates badges, and routes
+ * to the remembered (or default) screen. Called by the engine after every save analysis and at load.
+ * @param {object} db the HK singleton
+ */
+function GenerateInnerHTML(db) {
+
+  benchmarkTimes.GenerateInnerHTML.timeStart = performance.now();
+
+  if (!chromeBuilt) BuildChrome();
+
+  let target = document.getElementById("generated");
+  if (target) {
+    target.innerHTML = renderAllScreens(db);
+  }
+
+  UpdateBadges(db);
+
+  /* Make category cards (Dashboard bento) clickable to their screen. Bind once. */
+  if (target && !target.dataset.navBound) {
+    target.addEventListener("click", (e) => {
+      let card = e.target.closest("[data-screen-link]");
+      if (card) ShowScreen(card.getAttribute("data-screen-link"));
+    });
+    target.dataset.navBound = "1";
+  }
+
+  /* Restore the last viewed screen (default: dashboard) */
+  let active = "dashboard";
+  if (StorageAvailable("localStorage") && localStorage.getItem("hkLedgerScreen")) {
+    active = localStorage.getItem("hkLedgerScreen");
+  }
+  ShowScreen(active);
+
   benchmarkTimes.GenerateInnerHTML.timeEnd = performance.now();
 }
 
-function SectionDescription(section) {
-
-  return `<p class="section-description">${section.description}</p>`;
-}
-
-function IsSectionCompleted(section) {
-  if (section.id === "hk-intro" || section.id === "hk-hints" || section.id === "hk-statistics") {
-    return false;
-  }
-  let entries = section.entries;
-  for (let entry in entries) {
-    if (entries[entry].disabled === true) {
-      continue;
-    }
-    let iconName = entries[entry].icon;
-    let isCompleted = (
-      iconName === "green" ||
-      iconName === "bindingNail" ||
-      iconName === "bindingShell" ||
-      iconName === "bindingCharms" ||
-      iconName === "bindingSoul" ||
-      iconName === "bindingAll" ||
-      iconName === "attuned" ||
-      iconName === "ascended" ||
-      iconName === "radiant" ||
-      iconName === "none"
-    );
-    if (!isCompleted) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function SectionStart(section) {
-  let extraClass = IsSectionCompleted(section) ? "completed-section" : "";
-  let classes = ["section-container"];
-  if (extraClass) classes.push(extraClass);
-
-  if (StorageAvailable('localStorage')) {
-    if (localStorage.getItem(`collapsed-${section.id}`) === "true") {
-      classes.push("collapsed");
-    }
-  }
-  let cl = ` class="${classes.join(" ")}"`;
-  return `<div id="${section.id}"${cl}>\n`;
-}
-
-const TAB_SECTIONS = {
-  "tab-main": [
-    "bosses", "charms", "equipment", "nailUpgrades", "nailArts", 
-    "spells", "maskShards", "vesselFragments", "dreamNail", 
-    "warriorDreams", "dreamers", "colosseum", "grimmTroupe", 
-    "lifeblood", "godmaster"
-  ],
-  "tab-essentials": [
-    "essentialsCollectibles", "essentialsStagStations", 
-    "essentialsWorldInteractions", "essentialsBosses", 
-    "achievementsCollectibles", "achievementsMaps", 
-    "achievementsWorldInteractions", "achievementsBosses"
-  ],
-  "tab-journal": [
-    "huntersJournal", "huntersJournalOptional"
-  ],
-  "tab-collectibles": [
-    "charmNotches", "grubs", "whisperingRoots", 
-    "relicsWanderersJournal", "relicsHallownestSeal", 
-    "relicsKingsIdol", "relicsArcaneEgg", "rancidEggs", "items"
-  ],
-  "tab-geocaches": [
-    "geoChests", "geoRocks"
-  ],
-  "tab-secrets": [
-    "worldInteractions", "secretRooms", "corniferNotes"
-  ],
-  "tab-statistics": [
-    "statistics"
-  ],
-  "tab-godhome": [
-    "godhomeStatistics", "pantheonOfTheMaster", "pantheonOfTheArtist", 
-    "pantheonOfTheSage", "pantheonOfTheKnight", "pantheonOfHallownest", 
-    "hallOfGods"
-  ]
-};
-
-function GetTabCompletionPercent(tabId, db) {
-  if (!db.saveAnalyzed) {
-    return 0;
-  }
-  if (tabId === "tab-main") {
-    return db.sections.intro.percent;
-  }
-
-  const sections = TAB_SECTIONS[tabId];
-  if (!sections) return 0;
-
-  let completed = 0;
-  let total = 0;
-
-  for (let s of sections) {
-    let section = db.sections[s];
-    if (!section) continue;
-    let entries = section.entries;
-    for (let entry in entries) {
-      if (entries[entry].disabled === true) {
-        continue;
-      }
-      total++;
-      let iconName = entries[entry].icon;
-      let isCompleted = (
-        iconName === "green" ||
-        iconName === "bindingNail" ||
-        iconName === "bindingShell" ||
-        iconName === "bindingCharms" ||
-        iconName === "bindingSoul" ||
-        iconName === "bindingAll" ||
-        iconName === "attuned" ||
-        iconName === "ascended" ||
-        iconName === "radiant" ||
-        iconName === "none"
-      );
-      if (isCompleted) {
-        completed++;
-      }
-    }
-  }
-
-  if (total === 0) return 0;
-  return Math.round((completed / total) * 100);
-}
-
-function LargeSectionStart(tabId, title, db) {
-  let classes = ["large-section"];
-  if (StorageAvailable('localStorage')) {
-    if (localStorage.getItem(`collapsed-${tabId}`) === "true") {
-      classes.push("collapsed");
-    }
-  }
-  let pct = GetTabCompletionPercent(tabId, db);
-  return `<div id="${tabId}" class="${classes.join(" ")}"><h1 class="tab-header">${title} <div class="percent-box" style="margin-left:1.5rem;">${pct}%</div></h1>\n`;
-}
-
 /**
- * Replaces the h2 titles with max percent values as read from the database
- */
-function CompletionFillNoSave(section) {
-
-  let id = "";
-  let h2 = "";
-  let h2id = "";
-  let percentBox = ""; // Percent Box
-  let symbol = "";
-  let fullString = "";
-
-  id = section.id;
-  h2 = section.h2;
-  h2id = "h2-" + section.id;
-
-  /* Display % only when showing Main Game Completion % sections */
-  switch (section.id) {
-
-    case "hk-intro":
-
-      symbol = "%";
-
-      break;
-
-    default:
-
-      symbol = "";
-  }
-
-  percentBox = `<div class='percent-box'>${(id === "hk-intro") ? "0%": `0/${section.maxPercent}${symbol}`}</div>`;
-  if (!section.hasOwnProperty("maxPercent")) percentBox = "";
-
-  fullString += `<h2 id='${h2id}'>${h2}${percentBox}</h2>`;
-
-  // ----------------- add True Completion h2 title ---------------- //
-  switch (id) {
-
-    case "hk-intro":
-      fullString += `<h2 id='hk-true-completion'>True Completion<div class='percent-box'>0.00%</div></h2>`;
-      break;
-    default:
-  }
-
-  return fullString;
-}
-
-/**
- * Replaces the h2 titles with a current percent/max percent values as read from the database
- */
-function CompletionFill(section) {
-
-  let h2 = section.h2;
-  let h2id = `<h2 id="h2-${section.id}">`;
-  let cl = "";
-  let clGreen = "box-green";
-  let clRed = "box-red";
-  let cp = 0; // current Percent
-  let midP = 0; // middle Percent
-  let mp = 0; // max Percent
-  let trueCompletionCurrent = 0;
-  let trueCompletionTotal = 0;
-  let trueCompletionPercent = 0; // True Completion %
-  let symbol = "";
-  let percentBox = "";
-  let fullString = "";
-
-  (section.hasOwnProperty("percent")) ? cp = section.percent: cp = 0;
-
-  (section.hasOwnProperty("midPercent")) ? midP = section.midPercent: midP = 0;
-
-  // Don't use percent-box for Essentials, Achievements, Statistics etc.
-  if (!section.hasOwnProperty("maxPercent")) {
-    percentBox = "";
-  }
-  // otherwise use percent-box with values cp/mp%
-  else {
-
-    mp = section.maxPercent;
-
-    // Shards and Fragments correct calculations
-    if (section.id === "hk-maskshards") {
-      let perc = section.percent;
-      (perc % 4) ? cp = Math.floor(perc / 4): cp = perc / 4;
-    } else if (section.id === "hk-vesselfragments") {
-      let perc = section.percent;
-      (perc % 3) ? cp = Math.floor(perc / 3): cp = perc / 3;
-    }
-
-    // switches the box to red when a section (h2) is 0
-    if (cp === 0) {
-      cl = ` ${clRed}`;
-    }
-    // switches the box to green when a section (h2) is completed
-    else if (cp === mp) {
-      cl = ` ${clGreen}`;
-    }
-    // default is blue (partially completed and starting value)
-    else cl = "";
-
-    // Select which symbol or text to display (/ or something else depending on the section)
-    switch (section.id) {
-
-      // needed for Game Status to show percentage properly (adds a slash for all boxes except the Game Status one)
-      case "hk-intro":
-        break;
-
-      // Hunter's Journal entries, Completed/Encountered of Total, e.g. 23/134 of 146
-      case "hk-journal":
-        cp = `${cp}/${midP} of `;
-        break;
-
-      default:
-        cp += "/";
-    }
-
-    /* Display % only when showing Main Game Completion % sections */
-    switch (section.id) {
-
-      case "hk-intro":
-
-        // True Completion % reading and calculation for percent-box and box colors
-        trueCompletionCurrent = section.extendedCompletionDone;
-        trueCompletionTotal = section.extendedCompletionTotal;
-        trueCompletionPercent = (trueCompletionCurrent / trueCompletionTotal) * 100;
-        symbol = "%";
-
-        break;
-
-      default:
-
-        symbol = "";
-    }
-
-    percentBox = `<div class='percent-box${cl}'>${(section.id === "hk-intro") ? cp: `${cp}${section.maxPercent}`}${symbol}</div>`;
-  }
-
-  fullString += `\t${h2id}${h2}${percentBox}</h2>\n`;
-
-  // ----------------- add True Completion h2 title ---------------- //
-  switch (section.id) {
-
-    case "hk-intro":
-
-      // switches the box to red when True Completion is 0
-      if (trueCompletionCurrent === 0) {
-        cl = ` ${clRed}`;
-      }
-      // switches the box to green when True Completion is 100.00%
-      else if (trueCompletionCurrent === trueCompletionTotal) {
-        cl = ` ${clGreen}`;
-      }
-      // default is blue (partially completed and starting value)
-      else cl = "";
-
-      fullString += `<h2 id='hk-true-completion'>
-      True Completion<div class='percent-box${cl}'>${trueCompletionPercent.toFixed(2)}${symbol}</div>
-      </h2>`;
-      break;
-    default:
-  }
-
-  return fullString;
-}
-
-/* function SingleEntryFill(section, entry) { */
-function SingleEntryFill(obj) {
-
-  return [
-    obj.div,
-    obj.icon,
-    `${obj.b[0]}${obj.textPrefix}${obj.b[1]}`,
-    obj.span[0],
-    obj.p,
-    obj.spoiler[0],
-    `${obj.textSuffix}${obj.spoilerAfter}`,
-    obj.spoiler[1],
-    obj.span[1],
-    "</div>\n"
-  ].join("");
-
-}
-
-/**
- * Adds HTML string to an element with a given ID.
- * @param {object} divId object containing div ID of the HTML element to append to
- * @param {string} content HTML contents to append
+ * Legacy helper kept for API compatibility (imported by HKCheckCompletion.js). Appends HTML to an element.
  */
 function AppendHTML(divId, content) {
-  document.getElementById(divId.id).innerHTML += "\n" + content;
+  let el = document.getElementById(divId.id);
+  if (el) el.innerHTML += "\n" + content;
 }
+
+
+/* ################################### Controls (save mode, copy, filename) ########################################### */
 
 function ToggleSaveModeSwitch() {
 
@@ -1049,289 +291,142 @@ function ToggleSaveModeSwitch() {
   if (mode === "modeText") {
     this.value = "modeFile";
 
-    chooseFileButtonLabel.classList.remove("hidden");
-    analyzeTextButton.classList.add("hidden");
-    saveTextArea.classList.add("hidden");
-    /* alert(this.value); */
+    if (chooseFileButtonLabel) chooseFileButtonLabel.classList.remove("hidden");
+    if (analyzeTextButton) analyzeTextButton.classList.add("hidden");
+    if (saveTextArea) saveTextArea.classList.add("hidden");
   } else {
     this.value = "modeText";
 
-    chooseFileButtonLabel.classList.add("hidden");
-    analyzeTextButton.classList.remove("hidden");
-    saveTextArea.classList.remove("hidden");
-    /* Warning! focus() somehow makes the textarea text offset to the left */
-    /* saveTextArea.focus(); */
-    /* alert(this.value); */
+    if (chooseFileButtonLabel) chooseFileButtonLabel.classList.add("hidden");
+    if (analyzeTextButton) analyzeTextButton.classList.remove("hidden");
+    if (saveTextArea) saveTextArea.classList.remove("hidden");
   }
 }
 
 /**
- * Toggles display of "hk-hints". On click with no parameters or on demand when called with a parameter
+ * Toggles display of "#hk-hints". Guarded so it no-ops if the current screen has no hints element.
  * @param {string} param "hide", "show" or none (optional)
  */
 function CheckboxHintsToggle(param = "none") {
   let checkboxId = document.getElementById("checkbox-hints");
+  if (!checkboxId) return;
+  let hints = document.getElementById("hk-hints");
 
   switch (param) {
     case "hide":
-      document.getElementById("hk-hints").classList.add("hidden");
+      if (hints) hints.classList.add("hidden");
       checkboxId.value = "hints-off";
       checkboxId.checked = false;
-
-      // remember this choice for subsequent page visits and browser restarts
-      if (StorageAvailable('localStorage')) {
-        localStorage.setItem("hkCheckboxHints", "unchecked");
-      }
+      if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxHints", "unchecked");
       break;
     case "show":
-      document.getElementById("hk-hints").classList.remove("hidden");
+      if (hints) hints.classList.remove("hidden");
       checkboxId.value = "hints-on";
       checkboxId.checked = true;
-
-      // remember this choice for subsequent page visits and browser restarts
-      if (StorageAvailable('localStorage')) {
-        localStorage.setItem("hkCheckboxHints", "checked");
-      }
+      if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxHints", "checked");
       break;
     default:
-      // This runs when the checkbox is not checked
       if (checkboxId.checked === false) {
-        document.getElementById("hk-hints").classList.add("hidden");
+        if (hints) hints.classList.add("hidden");
         checkboxId.value = "hints-off";
-
-        // remember this choice for subsequent page visits and browser restarts
-        if (StorageAvailable('localStorage')) {
-          localStorage.setItem("hkCheckboxHints", "unchecked");
-        }
-      }
-      // This runs when the checkbox is checked
-      else {
-        document.getElementById("hk-hints").classList.remove("hidden");
+        if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxHints", "unchecked");
+      } else {
+        if (hints) hints.classList.remove("hidden");
         checkboxId.value = "hints-on";
-
-        // remember this choice for subsequent page visits and browser restarts
-        if (StorageAvailable('localStorage')) {
-          localStorage.setItem("hkCheckboxHints", "checked");
-        }
+        if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxHints", "checked");
       }
   }
 }
 
 /**
- * Toggles display of ".spoiler-span" class. On click with no parameters or on demand when called with a parameter
+ * Toggles the ".blurred" class on spoiler elements (names + suffixes) for the Spoilers checkbox.
  * @param {string} param "hide", "show" or none (optional)
  */
 function CheckboxSpoilersToggle(param = "none") {
 
   let checkboxId = document.getElementById("checkbox-spoilers");
+  if (!checkboxId) return;
   let allClassElements = document.querySelectorAll(".spoiler-span");
   let allClassElementsRed = document.querySelectorAll(".spoiler-red");
   let length = allClassElements.length;
   let lengthRed = allClassElementsRed.length;
 
+  function blurAll() {
+    for (let i = 0; i < length; i++) allClassElements[i].classList.add("blurred");
+    for (let i = 0; i < lengthRed; i++) allClassElementsRed[i].classList.add("blurred");
+  }
+  function revealAll() {
+    for (let i = 0; i < length; i++) allClassElements[i].classList.remove("blurred");
+    for (let i = 0; i < lengthRed; i++) allClassElementsRed[i].classList.remove("blurred");
+  }
+
   switch (param) {
     case "hide":
-      for (let i = 0; i < length; i++) {
-        allClassElements[i].classList.add("blurred");
-      }
-
-      for (let i = 0; i < lengthRed; i++) {
-        allClassElementsRed[i].classList.add("blurred");
-      }
-
+      blurAll();
       checkboxId.value = "spoilers-off";
       checkboxId.checked = false;
-
-      // remember this choice for subsequent page visits and browser restarts
-      if (StorageAvailable('localStorage')) {
-        localStorage.setItem("hkCheckboxSpoilers", "unchecked");
-      }
+      if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxSpoilers", "unchecked");
       break;
 
     case "show":
-      for (let i = 0; i < length; i++) {
-        allClassElements[i].classList.remove("blurred");
-      }
-
-      for (let i = 0; i < lengthRed; i++) {
-        allClassElementsRed[i].classList.remove("blurred");
-      }
-
+      revealAll();
       checkboxId.value = "spoilers-on";
       checkboxId.checked = true;
-
-      // remember this choice for subsequent page visits and browser restarts
-      if (StorageAvailable('localStorage')) {
-        localStorage.setItem("hkCheckboxSpoilers", "checked");
-      }
+      if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxSpoilers", "checked");
       break;
 
     default:
-      // This runs when the checkbox is not checked
       if (checkboxId.checked === false) {
-
-        for (let i = 0; i < length; i++) {
-          allClassElements[i].classList.add("blurred");
-        }
-
-        for (let i = 0; i < lengthRed; i++) {
-          allClassElementsRed[i].classList.add("blurred");
-        }
-
+        blurAll();
         checkboxId.value = "spoilers-off";
-
-        // remember this choice for subsequent page visits and browser restarts
-        if (StorageAvailable('localStorage')) {
-          localStorage.setItem("hkCheckboxSpoilers", "unchecked");
-        }
-        break;
-      }
-      // This runs when the checkbox is checked
-      else {
-        for (let i = 0; i < length; i++) {
-          allClassElements[i].classList.remove("blurred");
-        }
-
-        for (let i = 0; i < lengthRed; i++) {
-          allClassElementsRed[i].classList.remove("blurred");
-        }
-
+        if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxSpoilers", "unchecked");
+      } else {
+        revealAll();
         checkboxId.value = "spoilers-on";
-
-        // remember this choice for subsequent page visits and browser restarts
-        if (StorageAvailable('localStorage')) {
-          localStorage.setItem("hkCheckboxSpoilers", "checked");
-        }
+        if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxSpoilers", "checked");
       }
   }
 }
 
 /**
- * Toggles display of completed items, leaving only incomplete ones.
+ * Toggles the "show-incomplete-only" body class to hide completed entries.
  * @param {string} param "hide", "show" or none (optional)
  */
 function CheckboxIncompleteToggle(param = "none") {
   let checkboxId = document.getElementById("checkbox-incomplete");
+  if (!checkboxId) return;
 
   switch (param) {
     case "hide":
       document.body.classList.remove("show-incomplete-only");
       checkboxId.value = "incomplete-off";
       checkboxId.checked = false;
-
-      // remember this choice for subsequent page visits and browser restarts
-      if (StorageAvailable('localStorage')) {
-        localStorage.setItem("hkCheckboxIncomplete", "unchecked");
-      }
+      if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxIncomplete", "unchecked");
       break;
 
     case "show":
       document.body.classList.add("show-incomplete-only");
       checkboxId.value = "incomplete-on";
       checkboxId.checked = true;
-
-      // remember this choice for subsequent page visits and browser restarts
-      if (StorageAvailable('localStorage')) {
-        localStorage.setItem("hkCheckboxIncomplete", "checked");
-      }
+      if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxIncomplete", "checked");
       break;
 
     default:
-      // This runs when the checkbox is not checked
       if (checkboxId.checked === false) {
         document.body.classList.remove("show-incomplete-only");
         checkboxId.value = "incomplete-off";
-
-        // remember this choice for subsequent page visits and browser restarts
-        if (StorageAvailable('localStorage')) {
-          localStorage.setItem("hkCheckboxIncomplete", "unchecked");
-        }
-      }
-      // This runs when the checkbox is checked
-      else {
+        if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxIncomplete", "unchecked");
+      } else {
         document.body.classList.add("show-incomplete-only");
         checkboxId.value = "incomplete-on";
-
-        // remember this choice for subsequent page visits and browser restarts
-        if (StorageAvailable('localStorage')) {
-          localStorage.setItem("hkCheckboxIncomplete", "checked");
-        }
+        if (StorageAvailable('localStorage')) localStorage.setItem("hkCheckboxIncomplete", "checked");
       }
-  }
-}
-
-/**
- * Hides all other tabs, except the one which button was clicked (shows only the chosen tab)
- * @param {String} clickedButton The click target (button clicked)
- */
-function PageSwitchTab(clickedButton) {
-
-  if (clickedButton === "all") {
-    document.body.classList.add("show-all-tabs");
-  } else {
-    document.body.classList.remove("show-all-tabs");
-  }
-
-  let sectionList = document.querySelectorAll(".large-section");
-  let buttonList = document.querySelectorAll(".tab-switch");
-
-  /* Make Active Tab Visible */
-  for (let i = 0, length = sectionList.length; i < length; i++) {
-
-    if (clickedButton === "all") {
-      if (sectionList[i].classList.contains("hidden")) {
-        sectionList[i].classList.remove("hidden");
-      }
-    } else {
-      /* Other tabs except the clicked one */
-      if (sectionList[i].id !== `tab-${clickedButton}`) {
-
-        if (!sectionList[i].classList.contains("hidden")) {
-          sectionList[i].classList.add("hidden");
-        }
-      }
-      /* The clicked tab */
-      else {
-
-        if (sectionList[i].classList.contains("hidden")) {
-          sectionList[i].classList.remove("hidden");
-        }
-      }
-    }
-  }
-
-  /* Make Active Button stand out */
-  for (let i = 0, length = buttonList.length; i < length; i++) {
-
-    /* Other buttons except the clicked one */
-    if (buttonList[i].id !== `button-switch-${clickedButton}`) {
-
-      if (buttonList[i].classList.contains("tab-active")) {
-        buttonList[i].classList.remove("tab-active");
-      }
-    }
-    /* The clicked button */
-    else {
-
-      if (!buttonList[i].classList.contains("tab-active")) {
-        buttonList[i].classList.add("tab-active");
-      }
-    }
-  }
-
-  /* remember this choice for subsequent page visits and browser restarts */
-  if (StorageAvailable('localStorage')) {
-
-    if (clickedButton) {
-      localStorage.setItem("hkTabActive", clickedButton);
-    }
   }
 }
 
 /**
  * Detects whether Storage is both supported and available.
- * MDN WebDocs https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API#feature-detecting_localstorage
- * @param {Storage} type type of storage. Ex. "localStorage" or "sessionStorage"
+ * @param {string} type "localStorage" or "sessionStorage"
  * @returns {Boolean}
  */
 function StorageAvailable(type) {
@@ -1344,54 +439,40 @@ function StorageAvailable(type) {
     return true;
   } catch (e) {
     return e instanceof DOMException && (
-        // everything except Firefox
         e.code === 22 ||
-        // Firefox
         e.code === 1014 ||
-        // test name field too, because code might not be present
-        // everything except Firefox
         e.name === 'QuotaExceededError' ||
-        // Firefox
         e.name === 'NS_ERROR_DOM_QUOTA_REACHED') &&
-      // acknowledge QuotaExceededError only if there's something already stored
       (storage && storage.length !== 0);
   }
 }
 
 /**
- * Fills the innerHTML of a given HTML Element with provided contents
- * @param {string} elementId Element ID to update
- * @param {string} textFill Updated contents (innerHTML)
+ * Fills the innerHTML of a given HTML Element with provided contents.
  */
 function FillInnerHTML(elementId, textFill) {
-
   const element = document.getElementById(elementId);
-  element.innerHTML = textFill;
+  if (element) element.innerHTML = textFill;
 }
 
 /**
- * Focuses, selects and copies to clipboard contents inside a clicked element. Includes optional tooltip update after the copying is done.
- * @param {MouseEvent} mouseEvent from the clicked element (AddEventListener)
- * @param {string} tooltipId Element ID of the tooltip to update
- * @param {string} tooltipFill Updated contents of the tooltip
+ * Focuses, selects and copies the clicked input's contents to the clipboard, with an optional tooltip update.
  */
 function SelectCopyInputText(mouseEvent, tooltipId = "", tooltipFill = "") {
 
   const element = document.getElementById(mouseEvent.target.id);
+  if (!element) return;
 
-  // this prevents the un-selected effect after clicking the second time (clears all selection first)
   if (window.getSelection) {
     window.getSelection().removeAllRanges();
   }
 
-  element.focus(); // best to focus the element first before selecting
+  element.focus();
   element.select();
-  element.setSelectionRange(0, 99999); // for mobile devices
+  element.setSelectionRange(0, 99999);
 
-  // Copy the text inside the text field to clipboard
   document.execCommand("copy");
 
-  // optional tooltip showing
   if (tooltipFill.length && tooltipId.length) FillInnerHTML(tooltipId, tooltipFill);
 }
 
@@ -1399,11 +480,9 @@ function FileNameFormat(file, nameLength, beginLength, endLength) {
 
   var fileName = file.name;
 
-  /* Shorten the file name if too long */
   if (fileName.length > nameLength) {
-
-    let begin = fileName.slice(0, beginLength); // take X characters from the beginning (0)
-    let end = fileName.slice(-endLength); // take X characters from the end (-)
+    let begin = fileName.slice(0, beginLength);
+    let end = fileName.slice(-endLength);
     fileName = `${begin}..${end}`;
   }
 
@@ -1419,15 +498,28 @@ function FileDateFormat(file) {
   var day = fileDate.getDate();
   var hour = fileDate.getHours();
   var minutes = fileDate.getMinutes();
-  /* var seconds = fileDate.getSeconds(); */
 
   if (month < 10) month = "0" + month;
   if (day < 10) day = "0" + day;
   if (hour < 10) hour = "0" + hour;
   if (minutes < 10) minutes = "0" + minutes;
-  /* if (seconds < 10) seconds = "0" + seconds; */
 
   return `${year}.${month}.${day} ${hour}:${minutes}`;
+}
+
+/**
+ * Reflects each filter checkbox's checked state onto ALL of its labels (sidebar + mobile
+ * chips) via an .is-active class. Needed because the mobile chips share the checkbox by
+ * `for=` but are not peer-siblings, so CSS peer-checked can't style them.
+ */
+function SyncFilterChips() {
+  ["checkbox-spoilers", "checkbox-incomplete"].forEach((id) => {
+    let cb = document.getElementById(id);
+    if (!cb) return;
+    document.querySelectorAll(`label[for="${id}"]`).forEach((lbl) => {
+      lbl.classList.toggle("is-active", cb.checked);
+    });
+  });
 }
 
 /* ========================== Event Listeners ========================== */
@@ -1435,68 +527,63 @@ function FileDateFormat(file) {
 /* --------------- Toggle visibility of scroll arrow ------------------ */
 
 document.addEventListener("scroll", () => {
-
-  TogglePageScrollElement(
-    /* the document element root (<html>) */
-    ROOT,
-    /* Which element to toggle visibility */
-    SCROLL_BUTTON,
-    /* How far the user has to scroll to show the element */
-    0.1);
+  TogglePageScrollElement(ROOT, SCROLL_BUTTON, 0.1);
 });
 
 /* ---------------- Scroll to top when clicked ------------------- */
 
-SCROLL_BUTTON.addEventListener("click", () => {
-  ScrollToElement(ROOT);
-});
+if (SCROLL_BUTTON) {
+  SCROLL_BUTTON.addEventListener("click", () => {
+    ScrollToElement(ROOT);
+  });
+}
 
-/* ------------- Auto select & copy to clipboard when the save file location input text is clicked once ------------- */
+/* ------------- Auto select & copy the save-file location on click ------------- */
 
-document.getElementById("save-location-input").addEventListener("click", (e) => {
+(function () {
+  let saveLocation = document.getElementById("save-location-input");
+  if (!saveLocation) return;
 
-  let tooltip = document.getElementById("save-location-input-tooltip");
+  saveLocation.addEventListener("click", (e) => {
+    let tooltip = document.getElementById("save-location-input-tooltip");
+    SelectCopyInputText(e, "save-location-input-tooltip", "Copied save files location to clipboard");
+    if (tooltip) tooltip.style.marginLeft = `-${tooltip.offsetWidth / 2}px`;
+  }, false);
 
-  SelectCopyInputText(e, "save-location-input-tooltip", "Copied save files location to clipboard");
-
-  /* make sure that the tooltip is centered */
-  tooltip.style.marginLeft = `-${tooltip.offsetWidth / 2}px`;
-}, false);
-
-/* -------------- Switch text back to the default on mouse out -------------- */
-
-document.getElementById("save-location-input").addEventListener("mouseout", () => {
-
-  let tooltip = document.getElementById("save-location-input-tooltip");
-
-  /* change the text and center only when the text was different */
-  if (tooltip.innerHTML !== "Click once to copy to clipboard") {
-
-    FillInnerHTML("save-location-input-tooltip", "Click once to copy to clipboard");
-
-    /* make sure that the tooltip is centered */
-    tooltip.style.marginLeft = `-${tooltip.offsetWidth / 2}px`;
-  }
-}, false);
+  saveLocation.addEventListener("mouseout", () => {
+    let tooltip = document.getElementById("save-location-input-tooltip");
+    if (tooltip && tooltip.innerHTML !== "Click once to copy to clipboard") {
+      FillInnerHTML("save-location-input-tooltip", "Click once to copy to clipboard");
+      tooltip.style.marginLeft = `-${tooltip.offsetWidth / 2}px`;
+    }
+  }, false);
+})();
 
 /* ------------ Toggle Save Mode Switch: Text Mode or File Mode -------------- */
 
-document.getElementById("toggle-mode").addEventListener("click", ToggleSaveModeSwitch, false);
+(function () {
+  let toggleMode = document.getElementById("toggle-mode");
+  if (toggleMode) toggleMode.addEventListener("click", ToggleSaveModeSwitch, false);
+})();
 
 /* ------------- Checkbox functions ---------------------- */
 
-document.getElementById("checkbox-hints").addEventListener("click", CheckboxHintsToggle, false);
-document.getElementById("checkbox-spoilers").addEventListener("click", CheckboxSpoilersToggle, false);
-document.getElementById("checkbox-incomplete").addEventListener("click", CheckboxIncompleteToggle, false);
+(function () {
+  let hints = document.getElementById("checkbox-hints");
+  let spoilers = document.getElementById("checkbox-spoilers");
+  let incomplete = document.getElementById("checkbox-incomplete");
+  if (hints) hints.addEventListener("click", CheckboxHintsToggle, false);
+  if (spoilers) spoilers.addEventListener("click", CheckboxSpoilersToggle, false);
+  if (incomplete) incomplete.addEventListener("click", CheckboxIncompleteToggle, false);
+  if (spoilers) spoilers.addEventListener("click", SyncFilterChips, false);
+  if (incomplete) incomplete.addEventListener("click", SyncFilterChips, false);
+})();
 
 /* ------------ Drag & drop file to the window -------------- */
 
 window.addEventListener('dragover', (event) => {
-
   event.stopPropagation();
   event.preventDefault();
-
-  // Style the drag-and-drop as a "copy file" operation.
   event.dataTransfer.dropEffect = 'copy';
 });
 
@@ -1510,81 +597,72 @@ window.addEventListener('drop', (event) => {
   /* Launch save file analyzing */
   LoadSaveFile(dt, performance.now());
 
-  var label = document.getElementById("save-area-file").nextElementSibling;
+  let fileInput = document.getElementById("save-area-file");
+  if (!fileInput || !dt.files || !dt.files[0]) return;
+
+  var label = fileInput.nextElementSibling;
+  if (!label) return;
   var labelInitialText = label.innerHTML;
 
-  /* Shorten the file name if longer than 16 characters. Display first 10 characters and last 4. */
   var fileName = FileNameFormat(dt.files[0], 16, 10, 4);
-
-  /* Display a custom formatted last modified date. */
   var fileDate = FileDateFormat(dt.files[0]);
 
-  /* Display the save file name and date on the button */
   if (fileName) {
-    label.innerHTML = `${SYMBOL_FILE}${fileName}<div class="code-little">${fileDate}</div>`;
+    label.innerHTML = `${SYMBOL_FILE}<span class="align-middle">${fileName}</span><div class="code-little">${fileDate}</div>`;
   } else {
     label.innerHTML = labelInitialText;
   }
 });
 
-/* ---------- Monitor file input change and show the file name when file is loaded ----------- */
+/* ---------- Show the file name on the Load button when a file is chosen ----------- */
 
-document.getElementById("save-area-file").addEventListener("change", (event) => {
+(function () {
+  let fileInput = document.getElementById("save-area-file");
+  if (!fileInput) return;
 
-  var label = document.getElementById("save-area-file").nextElementSibling;
-  var labelInitialText = label.innerHTML;
+  fileInput.addEventListener("change", (event) => {
+    var label = fileInput.nextElementSibling;
+    if (!label || !event.target.files || !event.target.files[0]) return;
+    var labelInitialText = label.innerHTML;
 
-  /* Shorten the file name if longer than 16 characters. Display first 10 characters and last 4. */
-  var fileName = FileNameFormat(event.target.files[0], 16, 10, 4);
+    var fileName = FileNameFormat(event.target.files[0], 16, 10, 4);
+    var fileDate = FileDateFormat(event.target.files[0]);
 
-  /* Display a custom formatted last modified date. */
-  var fileDate = FileDateFormat(event.target.files[0]);
-
-  if (fileName) {
-    label.innerHTML = `${SYMBOL_FILE}${fileName}<div class="code-little">${fileDate}</div>`;
-  } else {
-    label.innerHTML = labelInitialText;
-  }
-});
-
-// Toggle collapse state on section header click
-document.addEventListener("click", (event) => {
-  let h2 = event.target.closest(".section-container h2");
-  if (h2) {
-    let section = h2.closest(".section-container");
-    if (section.id === "hk-intro" || section.id === "hk-hints") {
-      return;
+    if (fileName) {
+      label.innerHTML = `${SYMBOL_FILE}<span class="align-middle">${fileName}</span><div class="code-little">${fileDate}</div>`;
+    } else {
+      label.innerHTML = labelInitialText;
     }
-    section.classList.toggle("collapsed");
+  });
+})();
 
-    // Remember this collapse state in localStorage
-    if (StorageAvailable('localStorage')) {
-      let isCollapsed = section.classList.contains("collapsed");
-      localStorage.setItem(`collapsed-${section.id}`, isCollapsed);
-    }
+/* ------------- Persist the collapsible sidebar "View" section state ------------- */
+
+(function () {
+  let details = document.getElementById("view-filters");
+  if (!details) return;
+  if (StorageAvailable("localStorage")) {
+    let saved = localStorage.getItem("hkViewOpen");
+    if (saved === "closed") details.open = false;
+    else if (saved === "open") details.open = true;
   }
-
-  let h1 = event.target.closest(".large-section h1.tab-header");
-  if (h1) {
-    let largeSection = h1.closest(".large-section");
-    largeSection.classList.toggle("collapsed");
-
-    // Remember this collapse state in localStorage
-    if (StorageAvailable('localStorage')) {
-      let isCollapsed = largeSection.classList.contains("collapsed");
-      localStorage.setItem(`collapsed-${largeSection.id}`, isCollapsed);
+  details.addEventListener("toggle", () => {
+    if (StorageAvailable("localStorage")) {
+      localStorage.setItem("hkViewOpen", details.open ? "open" : "closed");
     }
-  }
-});
+  });
+})();
 
-/* -------- Clean the text area and file input from leftover save file if present (Firefox especially) -------- */
+/* -------- Clean the text area and file input from leftover save file (Firefox especially) -------- */
 
 document.addEventListener("DOMContentLoaded", () => {
-
   (async () => {
-    document.getElementById("save-area").value = "";
-    document.getElementById("save-area-file").value = "";
+    let sa = document.getElementById("save-area");
+    let saf = document.getElementById("save-area-file");
+    if (sa) sa.value = "";
+    if (saf) saf.value = "";
   })();
+  SyncFilterChips();
 });
 
 /* ------------------------- Exports ------------------------------- */
